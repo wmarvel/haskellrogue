@@ -1,0 +1,24 @@
+name: haskellrogue
+version: 0.1.0.0
+synopsis: A roguelike written in Haskell
+description: See README at <https://github.com/wmarvel/haskellrogue#readme>
+maintainer: Wendall Marvel <wendall.marvel@gmail.com>
+license: MIT
+github: wmarvel/haskellrogue
+category: Game
+
+ghc-options: -Wall
+
+dependencies:
+  - base >= 4.7 && < 5
+  - ansi-terminal >= 0.6 && < 0.7
+
+executables:
+  hrogue:
+    main: Main.hs
+    source-dirs: src
+    dependencies:
+      - hpack
+
+
+
