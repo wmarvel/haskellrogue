@@ -11,7 +11,8 @@ ghc-options: -Wall
 
 dependencies:
   - base >= 4.7 && < 5
-  - ansi-terminal >= 0.6 && < 0.7
+  - containers >= 0.5 && < 1
+  - ansi-terminal >= 0.6 && < 1
 
 executables:
   hrogue:
