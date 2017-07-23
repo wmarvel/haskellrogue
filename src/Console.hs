@@ -20,6 +20,7 @@ coordToChar coord (World hero level)
   | isWall coord level = '#'
   | otherwise = ' '
 
+drawChar :: Char -> IO ()
 drawChar '@' = do
   setSGR [ SetConsoleIntensity BoldIntensity
          , SetColor Foreground Vivid White ]

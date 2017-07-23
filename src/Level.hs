@@ -85,6 +85,10 @@ map1 =
 level1 :: Level
 level1 = stringsToLevel map1
 
+updateTile :: Coord -> Tile -> Level -> Level
+updateTile coord tile level = level { lTiles = newTiles }
+  where newTiles = M.insert coord tile (lTiles level)
+
 
 
 

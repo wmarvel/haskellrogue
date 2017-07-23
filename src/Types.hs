@@ -55,7 +55,8 @@ data Stairs
   deriving Eq
 
 data Command
-  = Dir Direction
+  = Move Direction
+  | Operate Direction
   | Exit
 
 data Direction
@@ -67,6 +68,7 @@ data Direction
   | SWest
   | West
   | NWest
+  | Stand
 
 data Hero = Hero
   { hCurPos :: Coord
