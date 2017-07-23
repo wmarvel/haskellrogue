@@ -46,7 +46,7 @@ updateWorld world (Operate dir) = gameLoop $ world {wLevel = opOn world dir}
 updateWorld world _ = gameLoop $ world
   
 moveHero :: World -> Direction -> Hero
-moveHero world@(World oldHero _ _) direction =
+moveHero world@(World oldHero _) direction =
   oldHero {hCurPos = newPos, hOldPos = oldPos}
   where
     oldPos = hCurPos oldHero
@@ -58,7 +58,7 @@ moveHero world@(World oldHero _ _) direction =
 
 opOn :: World -> Direction -> Level
 opOn world Stand = wLevel world
-opOn (World hero level _) dir =
+opOn (World hero level) dir =
   case (targetCoord hero dir) of
     target
       | isOpenDoor target level == True -> updateTile target (Dr Closed) level

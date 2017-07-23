@@ -48,7 +48,7 @@ render coord x = do
   putChar $ toRenderChar x
 
 coordToTile :: World -> Coord -> Tile
-coordToTile (World _ level _) coord = lookupTile coord level
+coordToTile (World _ level) coord = lookupTile coord level
 
 renderCoord :: World -> Coord -> IO ()
 renderCoord world coord = do
@@ -64,5 +64,4 @@ renderWorld world = do
   where
     (x', y') = lMax (wLevel world)
     coords = [(x, y) | x <- [0 .. x'], y <- [0 .. y']]
-
   
