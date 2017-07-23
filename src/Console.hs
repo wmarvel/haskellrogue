@@ -5,103 +5,63 @@ import System.Console.ANSI
 import Level
 import Types
 
-coordToChar :: Coord -> World -> Char
-coordToChar coord (World hero level)
-  | hCurPos hero == coord = '@'
-  | isAcid coord level = '~'
-  | isClosedDoor coord level = '+'
-  | isOpenDoor coord level = '\''
-  | isDownStairs coord level = '>'
-  | isUpStairs coord level = '<'
-  | isGold coord level = '$'
-  | isPotion coord level = '!'
-  | isWeapon coord level = '|'
-  | isVillian coord level = 'v'
-  | isWall coord level = '#'
-  | otherwise = ' '
+class ConsoleRenderable a where
+  toRenderChar :: a -> Char
+  toRenderSGR :: a -> [SGR]
 
-drawChar :: Char -> IO ()
-drawChar '@' = do
-  setSGR [ SetConsoleIntensity BoldIntensity
-         , SetColor Foreground Vivid White ]
-  putChar '@'
-drawChar '#' = do
-  setSGR [ SetConsoleIntensity BoldIntensity
-         , SetColor Foreground Vivid Blue ]
-  putChar  '#'
-drawChar '!' = do
-  setSGR [ SetConsoleIntensity BoldIntensity
-         , SetColor Foreground Vivid Magenta]
-  putChar '!'
-drawChar '$' = do
-  setSGR [ SetConsoleIntensity BoldIntensity
-         , SetColor Foreground Vivid Yellow ]
-  putChar '$'
-drawChar 'v' = do
-  setSGR [ SetConsoleIntensity BoldIntensity
-         , SetColor Foreground Vivid Red ]
-  putChar 'v'
-drawChar '|' = do
-  setSGR [ SetConsoleIntensity BoldIntensity
-         , SetColor Foreground Vivid Cyan ]
-  putChar '|'
-drawChar '>' = do
-  setSGR [ SetConsoleIntensity BoldIntensity
-         , SetColor Foreground Vivid Blue ]
-  putChar '>'
-drawChar '<' = do
-  setSGR [ SetConsoleIntensity BoldIntensity
-         , SetColor Foreground Vivid Blue ]
-  putChar '<'
-drawChar '\n' = do
-  putChar '\n'
-drawChar '+' = do
-  setSGR [ SetConsoleIntensity NormalIntensity
-         , SetColor Foreground Dull Magenta ]
-  putChar '+'
-drawChar '\'' = do
-  setSGR [ SetConsoleIntensity NormalIntensity
-         , SetColor Foreground Dull Magenta ]
-  putChar '\''
-drawChar '~' = do
-  setSGR [ SetConsoleIntensity BoldIntensity
-         , SetColor Foreground Vivid Green ]
-  putChar '~'  
-drawChar _ = do
-  setSGR [ SetConsoleIntensity BoldIntensity
-         , SetColor Foreground Vivid Black ]
-  putChar ' '
+instance ConsoleRenderable Hero where
+  toRenderChar _ = '@'
+  toRenderSGR _ =
+    [SetConsoleIntensity BoldIntensity, SetColor Foreground Vivid White]
 
+instance ConsoleRenderable Tile where
+  toRenderChar tile =
+    case tile of
+      Acid -> '~'
+      (Dr Closed) -> '+'
+      (Dr Opened) -> '\''
+      (St Down) -> '>'
+      (St Up) -> '<'
+      Wall -> '\x2588' --'#'
+      Floor -> ' '
+  toRenderSGR tile =
+    case tile of
+      Acid ->
+        [SetConsoleIntensity BoldIntensity, SetColor Foreground Vivid Green]
+      (Dr Closed) ->
+        [SetConsoleIntensity NormalIntensity, SetColor Foreground Dull Magenta]
+      (Dr Opened) ->
+        [SetConsoleIntensity NormalIntensity, SetColor Foreground Dull Magenta]
+      (St Down) ->
+        [SetConsoleIntensity BoldIntensity, SetColor Foreground Vivid Blue]
+      (St Up) ->
+        [SetConsoleIntensity BoldIntensity, SetColor Foreground Vivid Blue]
+      Wall ->
+        [SetConsoleIntensity NormalIntensity, SetColor Foreground Dull White]
+      Floor ->
+        [SetConsoleIntensity NormalIntensity, SetColor Foreground Vivid Black]
 
-drawCoord :: World -> Coord -> IO ()
-drawCoord world coord = do
+render :: (ConsoleRenderable a) => Coord -> a -> IO ()
+render coord x = do
   uncurry (flip setCursorPosition) coord
-  drawChar (coordToChar coord world)
+  setSGR $ toRenderSGR x
+  putChar $ toRenderChar x
 
-renderHero :: World -> IO ()
-renderHero world@(World ourHero _)
-  | curPos == oldPos = return ()
-  | otherwise = do
-    drawCoord world oldPos
-    drawCoord world curPos
-  where
-    curPos = hCurPos ourHero
-    oldPos = hOldPos ourHero
+coordToTile :: World -> Coord -> Tile
+coordToTile (World _ level) coord = lookupTile coord level
+
+renderCoord :: World -> Coord -> IO ()
+renderCoord world coord = do
+  render coord $ coordToTile world coord
+
+renderHero :: Hero -> IO ()
+renderHero hero@(Hero coord _) = render coord hero
 
 renderWorld :: World -> IO ()
 renderWorld world = do
   setCursorPosition 0 0
-  mapM_ drawChar (unlines chars)
+  mapM_ (renderCoord world) coords
+  renderHero (wHero world)
   where
     (x', y') = lMax (wLevel world)
-    chars = [[coordToChar (x, y) world | x <- [0 .. x']] | y <- [0 .. y']]
-
-
--- renderWorld :: World -> IO ()
--- renderWorld (World (x, y)) = do  
---   clearScreen
---   setCursorPosition y x
---   setSGR [SetConsoleIntensity BoldIntensity, SetColor Foreground Vivid White]
---   putStr "@"
-            
-
+    coords = [(x, y) | x <- [0 .. x'], y <- [0 .. y']]

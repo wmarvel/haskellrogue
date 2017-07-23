@@ -21,6 +21,8 @@ stringsToLevel str = foldl populate emptyLevel {lMax = coordMax} asciiMap
         _ -> lvl
         where oldTiles = lTiles lvl
 
+
+
 isAtCoord :: (a -> Bool) -> Coord -> M.Map Coord a -> Bool
 isAtCoord f coord valuemap =
   case fmap f $ M.lookup coord valuemap of
@@ -48,33 +50,13 @@ isDownStairs = isTile (==(St Down))
 isUpStairs :: Coord -> Level -> Bool
 isUpStairs = isTile (==(St Up))
 
-isGold :: Coord -> Level -> Bool
-isGold coord level = M.member coord (lGold level)
-
-isVillian :: Coord -> Level -> Bool
-isVillian coord level = M.member coord (lVillians level)
-
-isArmor :: Coord -> Level -> Bool
-isArmor coord level = case M.lookup coord (lItems level) of
-  Just (Arm _) -> True
-  _ -> False
-
-isPotion :: Coord -> Level -> Bool
-isPotion coord level = case M.lookup coord (lItems level) of
-  Just (Pot _) -> True
-  _ -> False
-
-isWeapon :: Coord -> Level -> Bool
-isWeapon coord level = case M.lookup coord (lItems level) of
-  Just (Weap _) -> True
-  _ -> False
 
 map1 :: [String]
 map1 =
   [ "##############"
   , "#            #          ######"
   , "#            ############    #"
-  , "#            -          +    #"
+  , "#            \'          +    #"
   , "#    ~~      ############    #"
   , "#     ~~     #          #    #"
   , "#      ~~    #          # >  #"
@@ -85,6 +67,11 @@ map1 =
 level1 :: Level
 level1 = stringsToLevel map1
 
+lookupTile :: Coord -> Level -> Tile
+lookupTile coord level = case M.lookup coord $ lTiles level of
+  Just tile -> tile
+  Nothing -> Floor
+  
 updateTile :: Coord -> Tile -> Level -> Level
 updateTile coord tile level = level { lTiles = newTiles }
   where newTiles = M.insert coord tile (lTiles level)
