@@ -21,8 +21,6 @@ stringsToLevel str = foldl populate emptyLevel {lMax = coordMax} asciiMap
         _ -> lvl
         where oldTiles = lTiles lvl
 
-
-
 isAtCoord :: (a -> Bool) -> Coord -> M.Map Coord a -> Bool
 isAtCoord f coord valuemap =
   case fmap f $ M.lookup coord valuemap of
@@ -75,6 +73,7 @@ lookupTile coord level = case M.lookup coord $ lTiles level of
 updateTile :: Coord -> Tile -> Level -> Level
 updateTile coord tile level = level { lTiles = newTiles }
   where newTiles = M.insert coord tile (lTiles level)
+
 
 
 
