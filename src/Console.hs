@@ -62,17 +62,11 @@ renderHero world@(World hero@(Hero curPos oldPos) _) = do
     else renderCoord world oldPos
 
 renderCoords :: World -> [Coord] -> IO ()
-renderCoords world coords = do
-  mapM_ (renderCoord world) coords
+renderCoords world coords = mapM_ (renderCoord world) coords
+
+
+renderWorld :: World -> IO ()
+renderWorld world = do
+  renderCoords world $ updatedCoords $ wLevel world
   renderHero world
-
-fullRenderWorld :: World -> IO ()
-fullRenderWorld world = do
-  renderCoords world coords
-  where
-    (x', y') = lMax (wLevel world)
-    coords = [(x, y) | x <- [0 .. x'], y <- [0 .. y']]
-
-fastRenderWorld :: World -> IO ()
-fastRenderWorld world = renderCoords world $ updatedCoords $ wLevel world
 

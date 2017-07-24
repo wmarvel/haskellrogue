@@ -10,13 +10,12 @@ import Types
 main :: IO ()
 main = do
   initDisplay
-  fullRenderWorld world
   gameLoop world
   where world = makeWorld { wLevel = level1 }
 
 gameLoop :: World -> IO ()
 gameLoop world = do
-  fastRenderWorld world
+  renderWorld world
   command <- getCommand
   case command of
     Exit -> exitGame

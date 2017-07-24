@@ -13,14 +13,13 @@ stringsToLevel str = foldl populate emptyLevel {lMax = coordMax} asciiMap
     coordMax = (dimMax fst fst, dimMax snd fst)
     populate lvl (coord, tile) =
       case tile of
-        '#' -> lvl {lTiles = M.insert coord Wall oldTiles}
-        '<' -> lvl {lTiles = M.insert coord (St Up) oldTiles}
-        '>' -> lvl {lTiles = M.insert coord (St Down) oldTiles}
-        '+' -> lvl {lTiles = M.insert coord (Dr Closed) oldTiles}
-        '\'' -> lvl {lTiles = M.insert coord (Dr Opened) oldTiles}
-        '~' -> lvl {lTiles = M.insert coord Acid oldTiles}
+        '#' -> updateTile coord Wall lvl
+        '<' -> updateTile coord (St Up) lvl
+        '>' -> updateTile coord (St Down) lvl
+        '+' -> updateTile coord (Dr Closed) lvl
+        '\'' -> updateTile coord (Dr Opened) lvl
+        '~' -> updateTile coord Acid lvl
         _ -> lvl
-        where oldTiles = lTiles lvl
 
 isAtCoord :: (a -> Bool) -> Coord -> M.Map Coord a -> Bool
 isAtCoord f coord valuemap =
