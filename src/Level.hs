@@ -1,6 +1,7 @@
 module Level where
 
 import qualified Data.Map as M
+import qualified Data.Set as S
 import Types
 
 stringsToLevel :: [String] -> Level
@@ -71,10 +72,13 @@ lookupTile coord level = case M.lookup coord $ lTiles level of
   Nothing -> Floor
   
 updateTile :: Coord -> Tile -> Level -> Level
-updateTile coord tile level = level { lTiles = newTiles }
-  where newTiles = M.insert coord tile (lTiles level)
+updateTile coord tile level = level { lTiles = tiles, lChanged = changed }
+  where
+    tiles = M.insert coord tile $ lTiles level
+    changed = S.insert coord $ lChanged level
 
-
+updatedCoords :: Level -> [Coord]
+updatedCoords = S.toList . lChanged 
 
 
 

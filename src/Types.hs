@@ -1,6 +1,7 @@
 module Types where
 
 import qualified Data.Map as M
+import qualified Data.Set as S
 
 type Coord = (Int, Int)
 
@@ -47,6 +48,7 @@ data Level = Level
   { lDepth :: Int
   , lMax :: Coord
   , lTiles :: M.Map Coord Tile
+  , lChanged :: S.Set Coord
   }
 
 data World = World
@@ -60,6 +62,7 @@ emptyLevel =
   { lDepth = 0
   , lMax = (1, 1)
   , lTiles = M.empty
+  , lChanged = S.empty
   }
 
 commoner :: Hero
@@ -71,3 +74,7 @@ commoner =
 
 makeWorld :: World
 makeWorld = World {wHero = commoner, wLevel = emptyLevel}
+
+unchangedWorld :: World -> World
+unchangedWorld world@(World _ level) =
+  world { wLevel = level { lChanged = S.empty }}

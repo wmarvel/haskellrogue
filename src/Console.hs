@@ -54,14 +54,25 @@ renderCoord :: World -> Coord -> IO ()
 renderCoord world coord = do
   render coord $ coordToTile world coord
 
-renderHero :: Hero -> IO ()
-renderHero hero@(Hero coord _) = render coord hero
+renderHero :: World -> IO ()
+renderHero world@(World hero@(Hero curPos oldPos) _) = do
+  render curPos hero
+  if curPos == oldPos
+    then return ()
+    else renderCoord world oldPos
 
-renderWorld :: World -> IO ()
-renderWorld world = do
+renderCoords :: World -> [Coord] -> IO ()
+renderCoords world coords = do
   mapM_ (renderCoord world) coords
-  renderHero (wHero world)
+  renderHero world
+
+fullRenderWorld :: World -> IO ()
+fullRenderWorld world = do
+  renderCoords world coords
   where
     (x', y') = lMax (wLevel world)
     coords = [(x, y) | x <- [0 .. x'], y <- [0 .. y']]
-  
+
+fastRenderWorld :: World -> IO ()
+fastRenderWorld world = renderCoords world $ updatedCoords $ wLevel world
+
