@@ -64,7 +64,6 @@ renderHero world@(World hero@(Hero curPos oldPos) _) = do
 renderCoords :: World -> [Coord] -> IO ()
 renderCoords world coords = mapM_ (renderCoord world) coords
 
-
 renderWorld :: World -> IO ()
 renderWorld world = do
   renderCoords world $ updatedCoords $ wLevel world

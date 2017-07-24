@@ -19,7 +19,7 @@ gameLoop world = do
   command <- getCommand
   case command of
     Exit -> exitGame
-    _ -> updateWorld (unchangedWorld world) command
+    _ -> gameLoop $ updateWorld (unchangedWorld world) command
 
 getCommand :: IO Command
 getCommand = do
@@ -39,10 +39,10 @@ canOccupy coord world = not $ isWall coord level || isClosedDoor coord level
 targetCoord :: Hero -> Direction -> Coord
 targetCoord hero dir = hCurPos hero |+| toDirDelta dir
 
-updateWorld :: World -> Command -> IO ()
-updateWorld world (Move dir) = gameLoop $ world {wHero = moveHero world dir}
-updateWorld world (Operate dir) = gameLoop $ world {wLevel = opOn world dir}
-updateWorld world _ = gameLoop $ world
+updateWorld :: World -> Command -> World
+updateWorld world (Move dir) = world {wHero = moveHero world dir}
+updateWorld world (Operate dir) = world {wLevel = opOn world dir}
+updateWorld world _ = world
   
 moveHero :: World -> Direction -> Hero
 moveHero world@(World oldHero _) direction =
