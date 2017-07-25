@@ -75,6 +75,5 @@ commoner =
 makeWorld :: World
 makeWorld = World {wHero = commoner, wLevel = emptyLevel}
 
-unchangedWorld :: World -> World
-unchangedWorld world@(World _ level) =
-  world { wLevel = level { lChanged = S.empty }}
+
+

@@ -80,4 +80,10 @@ updatedCoords :: Level -> [Coord]
 updatedCoords = S.toList . lChanged 
 
 
+unchangedWorld :: World -> World
+unchangedWorld world@(World _ level) =
+  world { wLevel = level { lChanged = S.empty }}
 
+changedWorld :: World -> World
+changedWorld world@(World _ level) =
+  world { wLevel = M.foldrWithKey updateTile level $ lTiles level }
