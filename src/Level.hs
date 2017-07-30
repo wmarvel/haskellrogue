@@ -18,46 +18,43 @@ stringsToLevel str = foldl populate emptyLevel {lMax = coordMax} asciiMap
         '>' -> updateTile coord (St Down) lvl
         '+' -> updateTile coord (Dr Closed) lvl
         '\'' -> updateTile coord (Dr Opened) lvl
-        '~' -> updateTile coord Acid lvl
+        '.' -> updateTile coord Floor lvl
         _ -> lvl
 
-isAtCoord :: (a -> Bool) -> Coord -> M.Map Coord a -> Bool
-isAtCoord f coord valuemap =
+isAtCoord :: (a -> Bool) -> Bool -> Coord -> M.Map Coord a -> Bool
+isAtCoord f defval coord valuemap =
   case fmap f $ M.lookup coord valuemap of
-    Nothing -> False
+    Nothing -> defval
     Just value -> value
 
-isTile :: (Tile -> Bool) -> Coord -> Level -> Bool
-isTile f coord level = isAtCoord f coord (lTiles level)
-
-isAcid :: Coord -> Level -> Bool
-isAcid = isTile (==Acid)
+isTile :: (Tile -> Bool) -> Bool -> Coord -> Level -> Bool
+isTile f defval coord level = isAtCoord f defval coord (lTiles level) 
 
 isClosedDoor :: Coord -> Level -> Bool
-isClosedDoor = isTile (==(Dr Closed))
+isClosedDoor = isTile (==(Dr Closed)) False
 
 isOpenDoor :: Coord -> Level -> Bool
-isOpenDoor = isTile (==(Dr Opened))
+isOpenDoor = isTile (==(Dr Opened)) False
 
 isWall :: Coord -> Level -> Bool
-isWall = isTile (==Wall)
+isWall = isTile (==Wall) True
 
 isDownStairs :: Coord -> Level -> Bool
-isDownStairs = isTile (==(St Down))
+isDownStairs = isTile (==(St Down)) False
 
 isUpStairs :: Coord -> Level -> Bool
-isUpStairs = isTile (==(St Up))
+isUpStairs = isTile (==(St Up)) False
 
 
 map1 :: [String]
 map1 =
   [ "##############"
-  , "#            #          ######"
-  , "#            ############    #"
-  , "#            \'          +    #"
-  , "#    ~~      ############    #"
-  , "#     ~~     #          #    #"
-  , "#      ~~    #          # >  #"
+  , "#............#          ######"
+  , "#............############....#"
+  , "#............\'..........+....#"
+  , "#............############....#"
+  , "#............#          #....#"
+  , "#............#          #.>..#"
   , "##############          ######"
   ]
             
@@ -68,12 +65,14 @@ level1 = stringsToLevel map1
 lookupTile :: Coord -> Level -> Tile
 lookupTile coord level = case M.lookup coord $ lTiles level of
   Just tile -> tile
-  Nothing -> Floor
+  Nothing -> Wall
   
 updateTile :: Coord -> Tile -> Level -> Level
 updateTile coord tile level = level { lTiles = tiles, lChanged = changed }
   where
-    tiles = M.insert coord tile $ lTiles level
+    tiles = case tile of
+      Wall -> M.delete coord $ lTiles level
+      _ -> M.insert coord tile $ lTiles level
     changed = S.insert coord $ lChanged level
 
 updatedCoords :: Level -> [Coord]

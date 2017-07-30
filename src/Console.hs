@@ -17,17 +17,14 @@ instance ConsoleRenderable Hero where
 instance ConsoleRenderable Tile where
   toRenderChar tile =
     case tile of
-      Acid -> '~'
       (Dr Closed) -> '+'
       (Dr Opened) -> '\''
       (St Down) -> '>'
       (St Up) -> '<'
       Wall -> '\x2588' --'#'
-      Floor -> ' '
+      Floor -> '.'
   toRenderSGR tile =
     case tile of
-      Acid ->
-        [SetConsoleIntensity BoldIntensity, SetColor Foreground Vivid Green]
       (Dr Closed) ->
         [SetConsoleIntensity NormalIntensity, SetColor Foreground Dull Magenta]
       (Dr Opened) ->
@@ -37,9 +34,9 @@ instance ConsoleRenderable Tile where
       (St Up) ->
         [SetConsoleIntensity BoldIntensity, SetColor Foreground Vivid Blue]
       Wall ->
-        [SetConsoleIntensity NormalIntensity, SetColor Foreground Dull White]
+        [SetConsoleIntensity NormalIntensity, SetColor Foreground Vivid White]
       Floor ->
-        [SetConsoleIntensity NormalIntensity, SetColor Foreground Vivid Black]
+        [SetConsoleIntensity NormalIntensity, SetColor Foreground Dull White]
 
 render :: (ConsoleRenderable a) => Coord -> a -> IO ()
 render coord x = do

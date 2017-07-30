@@ -6,8 +6,7 @@ import qualified Data.Set as S
 type Coord = (Int, Int)
 
 data Tile
-  = Acid
-  | Dr Door
+  = Dr Door
   | St Stairs
   | Wall
   | Floor
@@ -49,6 +48,11 @@ data Level = Level
   , lMax :: Coord
   , lTiles :: M.Map Coord Tile
   , lChanged :: S.Set Coord
+  }
+
+data Screen = Screen
+  { sOffset :: Coord
+  , sSize :: (Int, Int)
   }
 
 data World = World
