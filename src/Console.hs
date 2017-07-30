@@ -38,31 +38,34 @@ instance ConsoleRenderable Tile where
       Floor ->
         [SetConsoleIntensity NormalIntensity, SetColor Foreground Dull White]
 
-render :: (ConsoleRenderable a) => Coord -> a -> IO ()
-render coord x = do
-  uncurry (flip setCursorPosition) coord
+render :: (ConsoleRenderable a) => Screen -> Coord -> a -> IO ()
+render screen coord x = do
+  uncurry (flip setCursorPosition) $ toScreen screen coord
   setSGR $ toRenderSGR x
   putChar $ toRenderChar x
 
 coordToTile :: World -> Coord -> Tile
 coordToTile (World _ level) coord = lookupTile coord level
 
-renderCoord :: World -> Coord -> IO ()
-renderCoord world coord = do
-  render coord $ coordToTile world coord
+renderCoord :: Screen -> World -> Coord -> IO ()
+renderCoord screen world coord = do
+  render screen coord $ coordToTile world coord
 
-renderHero :: World -> IO ()
-renderHero world@(World hero@(Hero curPos oldPos) _) = do
-  render curPos hero
+renderHero :: Screen -> World -> IO ()
+renderHero screen world@(World hero@(Hero curPos oldPos) _) = do
+  render screen curPos hero
   if curPos == oldPos
     then return ()
-    else renderCoord world oldPos
+    else renderCoord screen world oldPos
 
-renderCoords :: World -> [Coord] -> IO ()
-renderCoords world coords = mapM_ (renderCoord world) coords
+renderCoords :: Screen -> World -> [Coord] -> IO ()
+renderCoords screen world coords = mapM_ (renderCoord screen world) coords
 
-renderWorld :: World -> IO ()
-renderWorld world = do
-  renderCoords world $ updatedCoords $ wLevel world
-  renderHero world
+renderWorld :: Screen -> World -> IO ()
+renderWorld screen world = do
+  renderCoords screen world $ updatedCoords $ wLevel world
+  renderHero screen world
+
+toScreen :: Screen -> Coord -> Coord
+toScreen (Screen off _) coord = coord |+| off
 

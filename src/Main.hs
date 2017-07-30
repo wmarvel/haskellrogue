@@ -10,16 +10,18 @@ import Types
 main :: IO ()
 main = do
   initDisplay
-  gameLoop world
-  where world = makeWorld { wLevel = level1 }
+  gameLoop screen world
+  where
+    world = makeWorld { wLevel = level1 }
+    screen = (Screen (39, 11) (80, 25))
 
-gameLoop :: World -> IO ()
-gameLoop world = do
-  renderWorld world
+gameLoop :: Screen -> World -> IO ()
+gameLoop screen world = do
+  renderWorld screen world
   command <- getCommand
   case command of
     Exit -> exitGame
-    _ -> gameLoop $ updateWorld (unchangedWorld world) command
+    _ -> gameLoop screen $ updateWorld (unchangedWorld world) command
 
 getCommand :: IO Command
 getCommand = do
@@ -84,9 +86,6 @@ resetDisplay = do
   setCursorPosition 0 0
   showCursor
   setSGR [Reset]
-
-(|+|) :: Coord -> Coord -> Coord
-(|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
 
 toDirDelta :: Direction -> Coord
 toDirDelta North = (0, -1)

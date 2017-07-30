@@ -60,6 +60,9 @@ data World = World
   , wLevel :: Level
   }
 
+(|+|) :: Coord -> Coord -> Coord
+(|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+
 emptyLevel :: Level
 emptyLevel =
   Level
