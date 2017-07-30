@@ -1,0 +1,36 @@
+For level generation:
+
+Two pieces - First generate a fully connected level with rooms, then remove most
+dead ends.
+
+Generate a fully connected level with rooms:
+1) Generate a perfect maze the size of the level
+2) Randomly place rooms into the level
+   - This will disconnect pieces of the perfect maze.
+4) Pick any starting floor tile
+5) Generate a floodfill from that floor tile and mark floor and door tiles as
+   being in our region.
+6) If there are no floor tiles left that are *not* in the region, we are done
+   with this part of level generation.
+7) Mark Wall tiles that meet the following criteria as replacable:
+   - Have two or more floor tiles adjacent
+   - Have exactly one of those tiles adjacent to the flooded region
+   - are not on the edge of the world
+   - Can this be done while flooding? probably.
+8) Replace at least one Wall tile that is marked as replacable with floor or
+a door, then go back to step 5.
+
+Remove (most?) dead ends:
+1) Get dead end tiles to be removed.
+   - A dead end is a floor tile with three adjacent Wall tiles
+   - To not remove them all we just randomly filter them with some probability
+     here
+2) For each dead end tile, replace with a wall. Check the adjacent floor tile
+   to see if it has become a dead end, if so, that tile becomes a dead end to
+   remove in the next pass.
+3) when there are dead ends to remove, we are done.
+
+
+This should leave us with a level that has all rooms connected, and if we select
+more than one Wall to remove during the removing-walls loop, we will no longer
+be perfectly connected but have loops in the paths.
