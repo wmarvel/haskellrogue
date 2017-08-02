@@ -29,14 +29,12 @@ insertWall coords level = pure $ foldr markWall level coords
 vertCoords :: Int -> Int -> Int -> IO [Coord]
 vertCoords column rMin rMax = do
   skipVal <- randEven rMin rMax
-  putStrLn $ show skipVal
-  pure $ [(row, column) | row <- [rMin .. rMax], row /= skipVal]
+  pure $ [(column, row) | row <- [rMin .. rMax], row /= skipVal]
 
 horzCoords :: Int -> Int -> Int -> IO [Coord]
 horzCoords row cMin cMax = do
   skipVal <- randEven cMin cMax
-  putStrLn $ show skipVal
-  pure $ [(row, column) | column <- [cMin .. cMax], column /= skipVal]
+  pure $ [(column, row) | column <- [cMin .. cMax], column /= skipVal]
 
 undividable :: Level -> Bool
 undividable level = x' <= x || y' <= y
@@ -59,8 +57,8 @@ chooseHorizontal level =
   if levWidth == levHeight
     then randBool
     else if levWidth < levHeight
-           then pure False
-           else pure True
+           then pure True
+           else pure False
   where
     (x, y) = lMin level
     (x', y') = lMax level
@@ -81,10 +79,10 @@ divideHorizontal level = do
   walled <- insertWall wallCoords level
   pure (part1 walled divRow, part2 walled divRow)
   where
-    part1 walled divRow = walled { lMax = (divRow - 1, colMax) }
-    part2 walled divRow = walled { lMin = (divRow + 1, colMin) }
-    (rowMin, colMin) = lMin level
-    (rowMax, colMax) = lMax level
+    part1 walled divRow = walled { lMax = (colMax, divRow - 1) }
+    part2 walled divRow = walled { lMin = (colMin, divRow + 1) }
+    (colMin, rowMin) = lMin level
+    (colMax, rowMax) = lMax level
 
 divideVertical :: Level -> IO (Level, Level)
 divideVertical level = do
@@ -93,10 +91,10 @@ divideVertical level = do
   walled <- insertWall wallCoords level
   pure (part1 walled divCol, part2 walled divCol)
   where
-    part1 walled divCol = walled { lMax = (rowMax, divCol - 1) }
-    part2 walled divCol = walled { lMin = (rowMin, divCol + 1) }
-    (rowMin, colMin) = lMin level
-    (rowMax, colMax) = lMax level
+    part1 walled divCol = walled { lMax = (divCol - 1, rowMax) }
+    part2 walled divCol = walled { lMin = (divCol + 1, rowMin) }
+    (colMin, rowMin) = lMin level
+    (colMax, rowMax) = lMax level
 
   
 
