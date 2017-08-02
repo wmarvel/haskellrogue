@@ -53,10 +53,23 @@ mazifyLevel level =
       mazified1 <- mazifyLevel part1
       mazified2 <- mazifyLevel part2
       pure $ joinLevels mazified1 mazified2
-    
+
+chooseHorizontal :: Level -> IO Bool
+chooseHorizontal level =
+  if levWidth == levHeight
+    then randBool
+    else if levWidth < levHeight
+           then pure False
+           else pure True
+  where
+    (x, y) = lMin level
+    (x', y') = lMax level
+    levWidth = x' - x
+    levHeight = y' - y
+
 divideLevel :: Level -> IO (Level, Level)
 divideLevel level = do
-  maybeHorizontal <- randBool
+  maybeHorizontal <- chooseHorizontal level
   if maybeHorizontal
     then divideHorizontal level
     else divideVertical level
