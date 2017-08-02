@@ -4,6 +4,9 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import Types
 
+sizedLevel :: Coord -> Level
+sizedLevel bound = emptyLevel {lMax = bound}
+
 stringsToLevel :: [String] -> Level
 stringsToLevel str = foldl populate emptyLevel {lMax = coordMax} asciiMap
   where
@@ -57,10 +60,16 @@ map1 =
   , "#............#          #.>..#"
   , "##############          ######"
   ]
-            
 
 level1 :: Level
 level1 = stringsToLevel map1
+
+levelAllFloor :: Coord -> Level
+levelAllFloor limit@(xMax, yMax) = foldl putFloorTile newLevel coords
+  where
+    newLevel = sizedLevel limit
+    coords = [(x, y) | x <- [0..xMax], y <- [0..yMax]]
+    putFloorTile level coord = updateTile coord Floor level
 
 lookupTile :: Coord -> Level -> Tile
 lookupTile coord level = case M.lookup coord $ lTiles level of
@@ -78,7 +87,6 @@ updateTile coord tile level = level { lTiles = tiles, lChanged = changed }
 updatedCoords :: Level -> [Coord]
 updatedCoords = S.toList . lChanged 
 
-
 unchangedWorld :: World -> World
 unchangedWorld world@(World _ level) =
   world { wLevel = level { lChanged = S.empty }}
@@ -86,3 +94,19 @@ unchangedWorld world@(World _ level) =
 changedWorld :: World -> World
 changedWorld world@(World _ level) =
   world { wLevel = M.foldrWithKey updateTile level $ lTiles level }
+
+copyTiles :: Coord -> Coord -> Level -> Level -> Level
+copyTiles (x1, y1) (x2, y2) source target =
+  foldr copyTile target [(x, y) | x <- [x1 .. x2], y <- [y1 .. y2]]
+  where
+    copyTile coord = updateTile coord (lookupTile coord source)
+
+joinLevels :: Level -> Level -> Level
+joinLevels l1 l2 =
+  merged {lMin = minCoord l1Min l2Min, lMax = maxCoord l1Max l2Max}
+  where
+    l1Min = lMin l1 
+    l1Max = lMax l1 
+    l2Min = lMin l2
+    l2Max = lMax l2
+    merged = copyTiles l2Min l2Max l2 l1

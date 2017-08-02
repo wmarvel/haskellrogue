@@ -5,15 +5,17 @@ import System.IO
 
 import Console
 import Level
+import LevelGen
 import Types
 
 main :: IO ()
 main = do
+  rlevel <- mazifyLevel $ levelAllFloor (78, 24)
   initDisplay
-  gameLoop screen world
+  gameLoop screen $ world rlevel
   where
-    world = makeWorld { wLevel = level1 }
-    screen = (Screen (39, 11) (80, 25))
+    world rlevel = makeWorld {wLevel = rlevel}
+    screen = (Screen (0, 0) (80, 25))
 
 gameLoop :: Screen -> World -> IO ()
 gameLoop screen world = do
