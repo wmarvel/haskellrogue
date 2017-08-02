@@ -4,9 +4,38 @@ import System.Random
 import Types
 import Level
 
+data Room = Room
+  { rPos :: Coord
+  , rWidth :: Int
+  , rHeight :: Int
+  }
+
+data GenContext = GenContext
+  { cRooms   :: Int -- The count of rooms to attempt to place
+  , cRoomMinDim :: Int -- The minimum dimension of a room (width or height)
+  , cRoomMaxDim :: Int -- The maximum dimension of a room (width or height)
+  }
+
+defaultContext :: GenContext
+defaultContext = GenContext {cRooms = 25, cRoomMinDim = 5, cRoomMaxDim = 10}
+
 -- Some useful random functions.
+
+randInt :: Int -> Int -> IO Int
+randInt rMin rMax = getStdRandom $ randomR (rMin, rMax)
+
+randRoom :: GenContext -> Coord -> IO Room
+randRoom (GenContext _ dMin dMax) (xMax, yMax) = do
+  randWidth <- randInt dMin dMax
+  randHeight <- randInt dMin dMax
+  randCol <- randInt 0 $ xMax - randWidth
+  randRow <- randInt 0 $ yMax - randHeight
+  pure $
+    Room
+    {rPos = (randCol, randRow), rWidth = randWidth, rHeight = randHeight}
+
 randMapped :: (Int -> Int) -> (Int -> Int) -> Int -> IO Int
-randMapped fRes fLim limit = fmap fRes $ getStdRandom $ randomR (0, fLim limit)
+randMapped fRes fLim limit = fmap fRes $ randInt 0 $ fLim limit
 
 randOdd :: Int -> Int -> IO Int
 randOdd x x' = fmap (+ x) $ randOdd' (x' - x)
@@ -96,11 +125,88 @@ divideVertical level = do
     (colMin, rowMin) = lMin level
     (colMax, rowMax) = lMax level
 
+-- Now that we can generate a perfect maze, drop some rooms in it
+generateLevel :: Level -> IO Level
+generateLevel level = do
+  maze <- mazifyLevel level
+  placed <- placeRooms maze $ generateRooms defaultContext $ lMax maze
+  pure $ fillDeadEnds placed
+
+roomsCollide :: Room -> Room -> Bool
+roomsCollide (Room (x, y) width height) (Room (x', y') width' height') =
+  x < x' + width' && x + width > x' && y < y' + height' && y + height > y'
+
+anyRoomsCollide :: Room -> [Room] -> Bool
+anyRoomsCollide room rooms = foldl roomsCollide' False rooms
+  where
+    roomsCollide' value room' = value || roomsCollide room room'
+
+generateRooms :: GenContext -> Coord -> IO [Room]
+generateRooms ctx coord = foldl passCollision (pure []) [0 .. cRooms ctx]
+  where
+    passCollision iorooms _ = do
+      rooms <- iorooms
+      room <- randRoom ctx coord
+      if anyRoomsCollide room rooms
+        then iorooms
+        else pure $ room : rooms
+
+placeRoom :: Level -> Room -> Level
+placeRoom level (Room (x, y) width height) =
+  foldl putRoomTile level [(x', y') | x' <- [x .. xMax], y' <- [y .. yMax]]
+  where
+    xMax = x + width
+    yMax = y + height
+    getRoomTile (col, row) =
+      if col == x || col == xMax || row == y || row == yMax
+        then Floor -- FIXME - Wall after running spanning tree
+        else Floor
+    putRoomTile level' coord = updateTile coord (getRoomTile coord) level'
+
+placeRooms :: Level -> IO [Room] -> IO Level
+placeRooms level iorooms = do
+  rooms <- iorooms
+  pure $ foldl placeRoom level rooms
+
+adjacents :: Coord -> [Coord]
+adjacents (col, row) =
+  [(col - 1, row), (col + 1, row), (col, row - 1), (col, row + 1)]
+
+allAdjacents :: Coord -> [Coord]
+allAdjacents (row, col) =
+  [ (x, y)
+  | x <- [col - 1 .. col + 1]
+  , y <- [row - 1 .. row + 1]
+  , (x, y) /= (col, row)
+  ]
+
+isDeadEnd :: Coord -> Level -> Bool
+isDeadEnd coord level = isFloor coord level && adjacentWalls >= 3
+  where
+    adjacentWalls = length $ filter (== True) $ map isWall' coords
+    coords = adjacents coord
+    isWall' = flip isWall level
+
+deadEnds :: Level -> [Coord]
+deadEnds level = foldl buildCoords [] $ levelCoords level
+  where
+    isDeadEnd' = flip isDeadEnd level
+    buildCoords list coord =
+      if isDeadEnd' coord
+        then coord : list
+        else list
+
+fillDeadEnds :: Level -> Level
+fillDeadEnds level = case deadEnds level of
+  [] -> level
+  deads -> fillDeadEnds $ onePass deads
+  where
+    fillDeadEnd coord level' = updateTile coord Wall level'
+    onePass ends = foldl (flip fillDeadEnd) level ends
+
+
+
+
   
 
-
-
-
-
-  
 

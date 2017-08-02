@@ -86,11 +86,7 @@ emptyLevel =
   }
 
 commoner :: Hero
-commoner =
-  Hero
-  { hCurPos = (1, 1)
-  , hOldPos = (1, 1)
-  }
+commoner = Hero {hCurPos = (1, 1), hOldPos = (1, 1)}
 
 makeWorld :: World
 makeWorld = World {wHero = commoner, wLevel = emptyLevel}

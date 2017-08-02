@@ -62,8 +62,17 @@ renderCoords screen world coords = mapM_ (renderCoord screen world) coords
 
 renderWorld :: Screen -> World -> IO ()
 renderWorld screen world = do
-  renderCoords screen world $ updatedCoords $ wLevel world
+  renderCoords screen world $ renderableCoords screen $ wLevel world
   renderHero screen world
+
+renderableCoords :: Screen -> Level -> [Coord]
+renderableCoords screen level =
+  filter (onScreen screen) $ updatedCoords level
+
+onScreen :: Screen -> Coord -> Bool
+onScreen screen@(Screen _ (xMax, yMax)) coord =
+  case toScreen screen coord of
+    (x, y) -> 0 <= x && x < xMax && 0 <= y && y < yMax
 
 toScreen :: Screen -> Coord -> Coord
 toScreen (Screen off _) coord = coord |+| off

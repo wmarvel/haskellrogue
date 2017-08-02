@@ -10,11 +10,12 @@ import Types
 
 main :: IO ()
 main = do
-  rlevel <- mazifyLevel $ levelAllFloor (79, 24)
+  rlevel <- generateLevel $ levelAllFloor (79, 24)
+  rspawn <- randomSpawn rlevel
   initDisplay
-  gameLoop screen $ world rlevel
+  gameLoop screen $
+    makeWorld {wHero = commoner {hCurPos = rspawn}, wLevel = rlevel}
   where
-    world rlevel = makeWorld {wLevel = rlevel}
     screen = (Screen (0, 0) (80, 25))
 
 gameLoop :: Screen -> World -> IO ()
@@ -29,7 +30,7 @@ getCommand :: IO Command
 getCommand = do
   char <- getChar
   case char of
-    c | c `elem` "kulnjbhy" -> return $ Move $ getDirection c
+    c | c `elem` "wasdkulnjbhy" -> return $ Move $ getDirection c
     'o' -> do
       ochar <- getChar
       return $ Operate $ getDirection ochar
@@ -106,6 +107,10 @@ toDirection (Operate dir) = toDirDelta dir
 toDirection _ = (0, 0)
 
 getDirection :: Char -> Direction
+getDirection 'w' = North
+getDirection 'a' = West
+getDirection 's' = South
+getDirection 'd' = East
 getDirection 'k' = North
 getDirection 'u' = NEast
 getDirection 'l' = East

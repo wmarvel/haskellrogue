@@ -2,6 +2,7 @@ module Level where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
+import System.Random
 import Types
 
 sizedLevel :: Coord -> Level
@@ -41,6 +42,9 @@ isOpenDoor = isTile (==(Dr Opened)) False
 
 isWall :: Coord -> Level -> Bool
 isWall = isTile (==Wall) True
+
+isFloor :: Coord -> Level -> Bool
+isFloor = isTile (==Floor) False
 
 isDownStairs :: Coord -> Level -> Bool
 isDownStairs = isTile (==(St Down)) False
@@ -110,3 +114,15 @@ joinLevels l1 l2 =
     l2Min = lMin l2
     l2Max = lMax l2
     merged = copyTiles l2Min l2Max l2 l1
+
+randomSpawn :: Level -> IO Coord
+randomSpawn level = do
+  offset <- getStdRandom $ randomR (0, length floors - 1)
+  pure $ floors !! offset
+  where
+    okTile = flip isFloor level
+    floors = filter okTile coords
+    coords = M.keys $ lTiles level
+
+levelCoords :: Level -> [Coord]
+levelCoords = M.keys . lTiles
