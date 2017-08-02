@@ -26,14 +26,14 @@ insertWall :: [Coord] -> Level -> IO Level
 insertWall coords level = pure $ foldr markWall level coords
   where markWall coord = updateTile coord Wall
 
-horzCoords :: Int -> Int -> Int -> IO [Coord]
-horzCoords column rMin rMax = do
+vertCoords :: Int -> Int -> Int -> IO [Coord]
+vertCoords column rMin rMax = do
   skipVal <- randEven rMin rMax
   putStrLn $ show skipVal
   pure $ [(row, column) | row <- [rMin .. rMax], row /= skipVal]
 
-vertCoords :: Int -> Int -> Int -> IO [Coord]
-vertCoords row cMin cMax = do
+horzCoords :: Int -> Int -> Int -> IO [Coord]
+horzCoords row cMin cMax = do
   skipVal <- randEven cMin cMax
   putStrLn $ show skipVal
   pure $ [(row, column) | column <- [cMin .. cMax], column /= skipVal]
@@ -64,7 +64,7 @@ divideLevel level = do
 divideHorizontal :: Level -> IO (Level, Level)
 divideHorizontal level = do
   divRow <- randOdd rowMin rowMax
-  wallCoords <- vertCoords divRow colMin colMax
+  wallCoords <- horzCoords divRow colMin colMax
   walled <- insertWall wallCoords level
   pure (part1 walled divRow, part2 walled divRow)
   where
@@ -76,7 +76,7 @@ divideHorizontal level = do
 divideVertical :: Level -> IO (Level, Level)
 divideVertical level = do
   divCol <- randOdd colMin colMax
-  wallCoords <- horzCoords divCol rowMin rowMax
+  wallCoords <- vertCoords divCol rowMin rowMax
   walled <- insertWall wallCoords level
   pure (part1 walled divCol, part2 walled divCol)
   where

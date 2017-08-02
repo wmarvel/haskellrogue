@@ -10,7 +10,7 @@ import Types
 
 main :: IO ()
 main = do
-  rlevel <- mazifyLevel $ levelAllFloor (78, 24)
+  rlevel <- mazifyLevel $ levelAllFloor (79, 24)
   initDisplay
   gameLoop screen $ world rlevel
   where

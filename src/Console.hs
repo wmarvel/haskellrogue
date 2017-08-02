@@ -1,9 +1,8 @@
 module Console where
 
-import System.Console.ANSI
-
 import Level
 import Types
+import System.Console.ANSI
 
 class ConsoleRenderable a where
   toRenderChar :: a -> Char
