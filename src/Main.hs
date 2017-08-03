@@ -10,7 +10,7 @@ import Types
 
 main :: IO ()
 main = do
-  rlevel <- generateLevel $ levelAllFloor (79, 24)
+  rlevel <- randomLevel $ levelAllFloor (79, 24)
   rspawn <- randomSpawn rlevel
   initDisplay
   gameLoop screen $

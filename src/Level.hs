@@ -52,6 +52,9 @@ isDownStairs = isTile (==(St Down)) False
 isUpStairs :: Coord -> Level -> Bool
 isUpStairs = isTile (==(St Up)) False
 
+isOccupiable :: Coord -> Level -> Bool
+isOccupiable coord level =
+  isFloor coord level || isOpenDoor coord level || isClosedDoor coord level
 
 map1 :: [String]
 map1 =
@@ -126,3 +129,7 @@ randomSpawn level = do
 
 levelCoords :: Level -> [Coord]
 levelCoords = M.keys . lTiles
+
+occupiableCoords :: Level -> S.Set Coord
+occupiableCoords level = S.fromList $ filter isOccupiable' $ levelCoords level
+  where isOccupiable' = flip isOccupiable level

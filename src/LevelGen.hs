@@ -3,6 +3,14 @@ import Data.Bits
 import System.Random
 import Types
 import Level
+import qualified Data.Set as S
+
+data ConnectInfo = ConnectInfo
+  { ciLevel :: Level
+  , ciConnected :: S.Set Coord
+  , ciConnectors :: S.Set Coord
+  , ciToVisit :: [Coord]
+  }
 
 data Room = Room
   { rPos :: Coord
@@ -17,7 +25,16 @@ data GenContext = GenContext
   }
 
 defaultContext :: GenContext
-defaultContext = GenContext {cRooms = 25, cRoomMinDim = 5, cRoomMaxDim = 10}
+defaultContext = GenContext {cRooms = 25, cRoomMinDim = 6, cRoomMaxDim = 12}
+
+emptyConnectInfo :: ConnectInfo
+emptyConnectInfo =
+  ConnectInfo
+  { ciLevel = emptyLevel
+  , ciConnected = S.empty
+  , ciConnectors = S.empty
+  , ciToVisit = []
+  }
 
 -- Some useful random functions.
 
@@ -26,10 +43,10 @@ randInt rMin rMax = getStdRandom $ randomR (rMin, rMax)
 
 randRoom :: GenContext -> Coord -> IO Room
 randRoom (GenContext _ dMin dMax) (xMax, yMax) = do
-  randWidth <- randInt dMin dMax
-  randHeight <- randInt dMin dMax
-  randCol <- randInt 0 $ xMax - randWidth
-  randRow <- randInt 0 $ yMax - randHeight
+  randWidth <- randEven dMin dMax
+  randHeight <- randEven dMin dMax
+  randCol <- randOdd 0 $ xMax - randWidth
+  randRow <- randOdd 0 $ yMax - randHeight
   pure $
     Room
     {rPos = (randCol, randRow), rWidth = randWidth, rHeight = randHeight}
@@ -126,11 +143,12 @@ divideVertical level = do
     (colMax, rowMax) = lMax level
 
 -- Now that we can generate a perfect maze, drop some rooms in it
-generateLevel :: Level -> IO Level
-generateLevel level = do
+randomLevel :: Level -> IO Level
+randomLevel level = do
   maze <- mazifyLevel level
   placed <- placeRooms maze $ generateRooms defaultContext $ lMax maze
-  pure $ fillDeadEnds placed
+  connected <- reconnectLevel defaultContext placed
+  pure $ fillDeadEnds connected
 
 roomsCollide :: Room -> Room -> Bool
 roomsCollide (Room (x, y) width height) (Room (x', y') width' height') =
@@ -159,7 +177,7 @@ placeRoom level (Room (x, y) width height) =
     yMax = y + height
     getRoomTile (col, row) =
       if col == x || col == xMax || row == y || row == yMax
-        then Floor -- FIXME - Wall after running spanning tree
+        then Floor -- Wall -- Wall when reconnection is complete
         else Floor
     putRoomTile level' coord = updateTile coord (getRoomTile coord) level'
 
@@ -168,8 +186,8 @@ placeRooms level iorooms = do
   rooms <- iorooms
   pure $ foldl placeRoom level rooms
 
-adjacents :: Coord -> [Coord]
-adjacents (col, row) =
+crossAdjacents :: Coord -> [Coord]
+crossAdjacents (col, row) =
   [(col - 1, row), (col + 1, row), (col, row - 1), (col, row + 1)]
 
 allAdjacents :: Coord -> [Coord]
@@ -184,7 +202,7 @@ isDeadEnd :: Coord -> Level -> Bool
 isDeadEnd coord level = isFloor coord level && adjacentWalls >= 3
   where
     adjacentWalls = length $ filter (== True) $ map isWall' coords
-    coords = adjacents coord
+    coords = crossAdjacents coord
     isWall' = flip isWall level
 
 deadEnds :: Level -> [Coord]
@@ -201,8 +219,22 @@ fillDeadEnds level = case deadEnds level of
   [] -> level
   deads -> fillDeadEnds $ onePass deads
   where
-    fillDeadEnd coord level' = updateTile coord Wall level'
-    onePass ends = foldl (flip fillDeadEnd) level ends
+    fillDeadEnd level' coord = updateTile coord Wall level'
+    onePass ends = foldl fillDeadEnd level ends
+
+fullyConnected :: ConnectInfo -> Bool
+fullyConnected ci = ciConnected ci == occupiableCoords lvl
+  where lvl = ciLevel ci
+
+reconnectLevel :: GenContext -> Level -> IO Level
+reconnectLevel _ level = do
+  seed <- randomSpawn level
+  reconnectLevel' $ emptyConnectInfo {ciLevel = level, ciToVisit = [seed]}
+  where
+    reconnectLevel' ci =
+      if fullyConnected ci
+        then pure $ ciLevel ci
+        else pure $ ciLevel ci
 
 
 

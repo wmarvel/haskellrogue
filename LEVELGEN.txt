@@ -4,8 +4,8 @@ Two pieces - First generate a fully connected level with rooms, then remove most
 dead ends.
 
 Generate a fully connected level with rooms:
-1) Generate a perfect maze the size of the level
-2) Randomly place rooms into the level
+1) Generate a perfect maze the size of the level -- code in place
+2) Randomly place rooms into the level -- code in place
    - This will disconnect pieces of the perfect maze.
 4) Pick any starting floor tile
 5) Generate a floodfill from that floor tile and mark floor and door tiles as
@@ -20,16 +20,14 @@ Generate a fully connected level with rooms:
 8) Replace at least one Wall tile that is marked as replacable with floor or
 a door, then go back to step 5.
 
-Remove (most?) dead ends:
-1) Get dead end tiles to be removed.
+Remove dead ends (code in place):
+1) Get dead end tiles to be removed. 
    - A dead end is a floor tile with three adjacent Wall tiles
    - To not remove them all we just randomly filter them with some probability
      here
-2) For each dead end tile, replace with a wall. Check the adjacent floor tile
-   to see if it has become a dead end, if so, that tile becomes a dead end to
-   remove in the next pass.
-3) when there are dead ends to remove, we are done.
-
+2) For each dead end tile, replace with a wall.
+3) If there are deadends left to remove, go back to step 1.
+4) All deadends have been filled. 
 
 This should leave us with a level that has all rooms connected, and if we select
 more than one Wall to remove during the removing-walls loop, we will no longer
