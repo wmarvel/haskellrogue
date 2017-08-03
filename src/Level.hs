@@ -53,8 +53,7 @@ isUpStairs :: Coord -> Level -> Bool
 isUpStairs = isTile (==(St Up)) False
 
 isOccupiable :: Coord -> Level -> Bool
-isOccupiable coord level =
-  isFloor coord level || isOpenDoor coord level || isClosedDoor coord level
+isOccupiable coord = not . isWall coord
 
 map1 :: [String]
 map1 =
@@ -79,9 +78,7 @@ levelAllFloor limit@(xMax, yMax) = foldl putFloorTile newLevel coords
     putFloorTile level coord = updateTile coord Floor level
 
 lookupTile :: Coord -> Level -> Tile
-lookupTile coord level = case M.lookup coord $ lTiles level of
-  Just tile -> tile
-  Nothing -> Wall
+lookupTile coord level = M.findWithDefault Wall coord $ lTiles level
   
 updateTile :: Coord -> Tile -> Level -> Level
 updateTile coord tile level = level { lTiles = tiles, lChanged = changed }
