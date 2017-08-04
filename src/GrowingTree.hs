@@ -13,17 +13,32 @@ data Cell
   | Wall
   | Floor
   | Connector
-  deriving (Eq, Show)
+  deriving Eq
 
 data Grid = Grid
   { gMin :: Coord
   , gMax :: Coord
   , gCells :: CellMap
   }
-  deriving Show
+
+instance Show Cell where
+  show Empty = " "
+  show Wall = "#"
+  show Floor = "."
+  show Connector = "+"
+
+instance Show Grid where
+  show g@(Grid (_, y) (_, y') _) = foldl appendRow "" [y .. y']
+    where
+      appendRow s y'' = s ++ (showGridRow g y'')
+
+showGridRow :: Grid -> Int -> String
+showGridRow g@(Grid (x, _) (x', _) _) y =
+  foldl cellToString "\n" [(x'', y) | x'' <- [x..x']]
+    where cellToString s c = s ++ (show $ lookupCell c g)
 
 emptyGrid :: Grid
-emptyGrid = Grid {gMin = (0, 0), gMax = (79, 24), gCells = M.empty}
+emptyGrid = Grid {gMin = (0, 0), gMax = (10, 5), gCells = M.empty}
 
 gridCells :: Grid -> [Coord]
 gridCells (Grid (x, y) (x', y') _) =
@@ -67,21 +82,21 @@ randomExposedCell x g = randomElt $ exposedCells x g
 
 mazifyGrid :: Grid -> [Coord] -> IO Grid
 mazifyGrid g [] = pure g
-mazifyGrid g (x:xs) = do
+mazifyGrid g xs@(x:xs') = do
   xMaybe <- randomExposedCell x g
   case xMaybe of
     Just x' ->
       if isCuttable x' g
-        then mazifyGrid (updateCell x' Floor g) (x' : x : xs)
+        then mazifyGrid (updateCell x' Floor g) (x' : xs)
         else mazifyGrid (updateCell x' Wall g) xs
-    Nothing -> mazifyGrid g xs
+    Nothing -> mazifyGrid g xs'
 
 randomizeGrid :: Grid -> IO Grid
 randomizeGrid g = do
   xMaybe <- randomEmptyCell g
   case xMaybe of
     Nothing -> pure g
-    Just x -> mazifyGrid(updateCell x Floor g) [x]
+    Just x -> mazifyGrid (updateCell x Floor g) [x]
 
 randomGrid :: IO Grid
 randomGrid = randomizeGrid emptyGrid
