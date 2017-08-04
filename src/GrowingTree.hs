@@ -13,13 +13,14 @@ data Cell
   | Wall
   | Floor
   | Connector
-  deriving Eq
+  deriving (Eq, Show)
 
 data Grid = Grid
   { gMin :: Coord
   , gMax :: Coord
   , gCells :: CellMap
   }
+  deriving Show
 
 emptyGrid :: Grid
 emptyGrid = Grid {gMin = (0, 0), gMax = (79, 24), gCells = M.empty}
@@ -71,8 +72,8 @@ mazifyGrid g (x:xs) = do
   case xMaybe of
     Just x' ->
       if isCuttable x' g
-        then mazifyGrid (updateCell x Floor g) (x' : xs)
-        else mazifyGrid (updateCell x Wall g) xs
+        then mazifyGrid (updateCell x' Floor g) (x' : x : xs)
+        else mazifyGrid (updateCell x' Wall g) xs
     Nothing -> mazifyGrid g xs
 
 randomizeGrid :: Grid -> IO Grid
