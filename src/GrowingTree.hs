@@ -45,6 +45,14 @@ gridCells :: Grid -> [Coord]
 gridCells (Grid (x, y) (x', y') _) =
   [(x'', y'') | x'' <- [x .. x'], y'' <- [y .. y']]
 
+surroundCells :: Coord -> [Coord]
+surroundCells (x, y) =
+  [ (x', y')
+  | x' <- [x - 1 .. x + 1]
+  , y' <- [y - 1 .. y + 1]
+  , (x, y) /= (x', y')
+  ]
+
 adjacentCells :: Coord -> [Coord]
 adjacentCells (x, y) = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
 
@@ -54,9 +62,15 @@ lookupCell x g = M.findWithDefault Empty x $ gCells g
 updateCell :: Coord -> Cell -> Grid -> Grid
 updateCell x c g = g { gCells = M.insert x c $ gCells g }
 
+cellsOf :: (Cell -> Bool) -> [Coord] -> Grid -> [Coord]
+cellsOf f l g = filter predicate l
+  where predicate x = isInbounds g x && (f $ lookupCell x g)
+
+surroundsOf :: (Cell -> Bool) -> Coord -> Grid -> [Coord]
+surroundsOf f x g = cellsOf f (surroundCells x) g
+
 adjacentsOf :: (Cell -> Bool) -> Coord -> Grid -> [Coord]
-adjacentsOf f x g = filter predicate (adjacentCells x)
-  where predicate x' = isInbounds g x' && (f $ lookupCell x' g)
+adjacentsOf f x g = cellsOf f (adjacentCells x) g
 
 isInbounds :: Grid -> Coord -> Bool
 isInbounds (Grid (xMin, yMin) (xMax, yMax) _) (x, y) =
@@ -83,13 +97,11 @@ randomExposedCell x g = randomElt $ exposedCells x g
 
 mazifyGrid :: Grid -> [Coord] -> IO Grid
 mazifyGrid g [] = pure g
-mazifyGrid g (x:xs) = do
-  putStrLn "--------"
-  putStrLn $ show g
+mazifyGrid g (x:xs) =
   if isCuttable x g
     then do
       exposed <- shuffleM $ exposedCells x g
-      mazifyGrid (updateCell x Floor g) (exposed ++ xs)
+      mazifyGrid (updateCell x Floor g) (foldl (flip (:)) xs exposed)
     else mazifyGrid (updateCell x Wall g) xs
 
 randomizeGrid :: Grid -> IO Grid
