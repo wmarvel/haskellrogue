@@ -1,6 +1,7 @@
 module GrowingTree where
 
 import System.Random
+import System.Random.Shuffle
 import qualified Data.Map as M
 import qualified Data.Set as S
 
@@ -82,21 +83,21 @@ randomExposedCell x g = randomElt $ exposedCells x g
 
 mazifyGrid :: Grid -> [Coord] -> IO Grid
 mazifyGrid g [] = pure g
-mazifyGrid g xs@(x:xs') = do
-  xMaybe <- randomExposedCell x g
-  case xMaybe of
-    Just x' ->
-      if isCuttable x' g
-        then mazifyGrid (updateCell x' Floor g) (x' : xs)
-        else mazifyGrid (updateCell x' Wall g) xs
-    Nothing -> mazifyGrid g xs'
+mazifyGrid g (x:xs) = do
+  putStrLn "--------"
+  putStrLn $ show g
+  if isCuttable x g
+    then do
+      exposed <- shuffleM $ exposedCells x g
+      mazifyGrid (updateCell x Floor g) (exposed ++ xs)
+    else mazifyGrid (updateCell x Wall g) xs
 
 randomizeGrid :: Grid -> IO Grid
 randomizeGrid g = do
   xMaybe <- randomEmptyCell g
   case xMaybe of
     Nothing -> pure g
-    Just x -> mazifyGrid (updateCell x Floor g) [x]
+    Just x -> mazifyGrid g [x]
 
 randomGrid :: IO Grid
 randomGrid = randomizeGrid emptyGrid
