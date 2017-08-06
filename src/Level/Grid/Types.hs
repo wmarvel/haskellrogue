@@ -7,10 +7,10 @@ type CellMap = M.Map Coord Cell
 
 data Cell
   = GridEmpty    -- Nothing done - default value
-  | GridFloor    -- In-Graph vertex or absence of edge
-  | GridEdgeWall -- Presence of edge
-  | GridEdgeHard -- Presence of an edge - cannot be cut
-  | GridEdgeDoor -- Absence of edge (special)
+  | GridFloor    -- vertex in-graph or presence of edge
+  | GridEdgeWall -- Absence of an edge
+  | GridEdgeDoor -- Absence of an edge (special)  
+  | GridWallHard -- vertex or edge unreachable
   deriving Eq
 
 data Grid = Grid
@@ -23,7 +23,7 @@ data Grid = Grid
 instance Show Cell where
   show GridEmpty = "?"
   show GridEdgeWall = "#"
-  show GridEdgeHard = "%"
+  show GridWallHard = "%"
   show GridEdgeDoor = "+"
   show GridFloor = "."
 
@@ -35,6 +35,16 @@ instance Show Grid where
 
 cell :: Coord -> Grid -> Cell
 cell c g = M.findWithDefault GridEmpty c $ gCells g
+
+-- Get coords in cell space of every cell in a row
+rowCells :: Int -> Grid -> [Coord]
+rowCells y g = case ((gridToCell $gMin g), (gridToCell $ gMax g)) of
+  ((x, _), (x', _)) -> [(x'', 2 * y) | x'' <- [x..x']]
+
+
+colCells :: Int -> Grid -> [Coord]
+colCells x g = case ((gridToCell $gMin g), (gridToCell $ gMax g)) of
+  ((_, y), (_, y')) -> [(2 * x, y'') | y'' <- [y..y']]
 
 -- Is a coordinate in cell space a node coordinate?
 isNodeCoord :: Coord -> Bool
@@ -86,20 +96,36 @@ emptyLinkedGrid gmin gmax = setAllLinks GridFloor $ emptyGrid gmin gmax
 emptyUnlinkedGrid :: Coord -> Coord -> Grid
 emptyUnlinkedGrid gmin gmax = setAllLinks GridEdgeWall $ emptyGrid gmin gmax
 
--- | Set a specific cell
+-- setAllCells v (linkCellCoords g) g
+bordered :: Grid -> Grid
+bordered g@(Grid (xmin, ymin) (xmax, ymax) _) =
+  setAllCells GridWallHard (colCells xmin g) southBordered
+  where
+    northBordered = setAllCells GridWallHard (rowCells ymin g) g
+    eastBordered = setAllCells GridWallHard (colCells xmax g) northBordered
+    southBordered = setAllCells GridWallHard (rowCells ymax g) eastBordered
+
+-- | Set a specific cell using a cell space coordinate
 setCell :: Cell -> Grid -> Coord -> Grid
 setCell c g x = g { gCells = M.insert x c $ gCells g }
 
+-- | Get the cell space coordinate of the edge between two adjacent cells
+edgeCoord :: Coord -> Coord -> Coord
+edgeCoord c1 c2 = gridToCell c1 |+| delta
+  where delta = c2 |-| c1
+  
 -- | set the edge between two adjacent cells
 setLink :: Cell -> Grid -> Coord -> Coord -> Grid
-setLink v g c1 c2 = setCell v g $ gridToCell c1 |+| delta
-  where delta = c2 |-| c1
+setLink v g c1 c2 = setCell v g $ edgeCoord c1 c2
 
 setNode :: Cell -> Grid -> Coord -> Grid
 setNode v g c = setCell v g $ gridToCell c
 
+setAllCells :: Cell -> [Coord] -> Grid -> Grid
+setAllCells v cs g = foldl (setCell v) g cs
+
 setAllLinks :: Cell -> Grid -> Grid
-setAllLinks c g = foldl (setCell c) g $ linkCellCoords g
+setAllLinks v g = setAllCells v (linkCellCoords g) g
 
 -- | link two cells in grid space. They must be adjacent
 link :: Grid -> Coord -> Coord -> Grid
@@ -113,7 +139,7 @@ unlink :: Grid -> Coord -> Coord -> Grid
 unlink g c1 c2 = setLink GridEdgeWall g c1 c2
 
 unlink' :: Grid -> Coord -> Coord -> Grid
-unlink' g c1 c2 = setLink GridEdgeHard g c1 c2
+unlink' g c1 c2 = setLink GridWallHard g c1 c2
 
 -- | Visit a cell
 visit :: Grid -> Coord -> Grid

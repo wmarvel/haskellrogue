@@ -16,7 +16,8 @@ adjacentNodesOf f x g = filter predicate (adjacentNodes x)
   where predicate x' = isNodeInBounds g x' && (f $ node x' g)
 
 unvisitedNodes :: Coord -> Grid -> [Coord]
-unvisitedNodes x g = adjacentNodesOf (==GridEmpty) x g
+unvisitedNodes x g = filter unlinked $ adjacentNodesOf (==GridEmpty) x g
+  where unlinked x' = GridEdgeWall == cell (edgeCoord x x') g
 
 unvisitedNodesR :: Coord -> Grid -> IO [Coord]
 unvisitedNodesR x g = shuffleM $ unvisitedNodes x g
@@ -40,4 +41,5 @@ mazeGrid gmin gmax = do
     Nothing -> pure grid
     Just x -> do
       mazify (visit grid x) [x]
-  where grid = emptyUnlinkedGrid gmin gmax
+  where
+    grid = emptyUnlinkedGrid gmin gmax

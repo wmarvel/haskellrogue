@@ -40,7 +40,7 @@ instance ConsoleRenderable Tile where
 
 render :: (ConsoleRenderable a) => Screen -> Coord -> a -> IO ()
 render screen coord x = do
-  uncurry (flip setCursorPosition) $ toScreen screen coord
+  uncurry (flip setCursorPosition) $ worldToScreen screen coord
   setSGR $ toRenderSGR x
   putChar $ toRenderChar x
 
@@ -59,22 +59,65 @@ renderHero screen world@(World hero@(Hero curPos oldPos) _) = do
     else renderCoord screen world oldPos
 
 renderCoords :: Screen -> World -> [Coord] -> IO ()
-renderCoords screen world coords = mapM_ (renderCoord screen world) coords
+renderCoords screen world coords = do
+  if sUpdated screen
+    then clearScreen
+    else pure ()
+  mapM_ (renderCoord screen world) coords
 
-renderWorld :: Screen -> World -> IO ()
+renderWorld :: Screen -> World -> IO Screen
 renderWorld screen world = do
-  renderCoords screen world $ renderableCoords screen $ wLevel world
-  renderHero screen world
+  renderCoords uScreen world $ renderableCoords uScreen $ wLevel world
+  renderHero uScreen world
+  pure $ uScreen
+  where
+    uScreen =
+      if inScreenBounds screen hero
+        then screen {sUpdated = False}
+        else updateScreen screen hero
+    hero = wHero world
+
+screenCoords :: Screen -> [Coord]
+screenCoords screen = [(x, y) | x <- [0..xMax], y <- [0..yMax]]
+  where (xMax, yMax) = sSize screen
 
 renderableCoords :: Screen -> Level -> [Coord]
 renderableCoords screen level =
-  filter (onScreen screen) $ updatedCoords level
+  if sUpdated screen
+    then map (screenToWorld screen) (screenCoords screen)
+    else filter (onScreen screen) $ updatedCoords level
+
+within :: Int -> Int -> Int -> Bool
+within v vMin vMax = vMin <= v && v <= vMax
+
+screenBounds :: Screen -> (Coord, Coord)
+screenBounds screen = ((0, 0), sSize screen)
 
 onScreen :: Screen -> Coord -> Bool
-onScreen screen@(Screen _ (xMax, yMax)) coord =
-  case toScreen screen coord of
-    (x, y) -> 0 <= x && x < xMax && 0 <= y && y < yMax
+onScreen screen coord =
+  case worldToScreen screen coord of
+    (x, y) -> within x xMin xMax && within y yMin yMax
+  where ((xMin, yMin), (xMax, yMax)) = screenBounds screen
 
-toScreen :: Screen -> Coord -> Coord
-toScreen (Screen off _) coord = coord |+| off
+worldToScreen :: Screen -> Coord -> Coord
+worldToScreen screen coord = coord |+| sOffset screen
 
+screenToWorld :: Screen -> Coord -> Coord
+screenToWorld screen coord = coord |-| sOffset screen
+
+inScreenBounds :: Screen -> Hero -> Bool
+inScreenBounds screen hero =
+  within xHero (xMin + 1) (xMax - 1) && within yHero (yMin + 1) (yMax - 1)
+  where
+    (xHero, yHero) = worldToScreen screen $ hCurPos hero
+    ((xMin, yMin), (xMax, yMax)) = screenBounds screen
+
+-- For now we will just set up an offset that centers the screen
+-- on our hero. We can do fancier translations later
+updateScreen :: Screen -> Hero -> Screen
+updateScreen screen hero = screen { sOffset = newOffset, sUpdated = True }
+  where
+    newOffset = (halfWidth, halfHeight) |-| hCurPos hero
+    (sWidth, sHeight) = sSize screen
+    halfWidth = quot sWidth 2
+    halfHeight = quot sHeight 2

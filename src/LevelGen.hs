@@ -75,11 +75,11 @@ randBool = getStdRandom $ randomR (False, True)
 copyFromGrid :: Level -> Grid -> IO Level
 copyFromGrid level grid = pure $ foldl copyCell level $ levelCoords level
   where
-    copyCell level x = updateTile x (cellToTile (cell x grid)) level
+    copyCell lvl x = updateTile x (cellToTile (cell x grid)) lvl
     cellToTile GridEmpty = Wall
     cellToTile GridFloor = Floor
     cellToTile GridEdgeWall = Wall
-    cellToTile GridEdgeHard = Wall
+    cellToTile GridWallHard = Wall
     cellToTile GridEdgeDoor = Dr Closed
 
 mazifyLevel :: Level -> IO Level

@@ -56,6 +56,7 @@ data Level = Level
 data Screen = Screen
   { sOffset :: Coord
   , sSize :: (Int, Int)
+  , sUpdated :: Bool
   }
 
 data World = World

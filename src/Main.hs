@@ -11,21 +11,21 @@ import Types
 
 main :: IO ()
 main = do
-  rlevel <- randomLevel $ levelAllFloor (79, 24)
+  rlevel <- randomLevel $ levelAllFloor (100, 100)
   rspawn <- randomSpawn rlevel
   initDisplay
   gameLoop screen $
     makeWorld {wHero = commoner {hCurPos = rspawn}, wLevel = rlevel}
   where
-    screen = (Screen (0, 0) (80, 25))
+    screen = (Screen (0, 0) (79, 24) True)
 
 gameLoop :: Screen -> World -> IO ()
 gameLoop screen world = do
-  renderWorld screen world
+  newScreen <- renderWorld screen world
   command <- getCommand
   case command of
     Exit -> exitGame
-    _ -> gameLoop screen $ updateWorld (unchangedWorld world) command
+    _ -> gameLoop newScreen $ updateWorld (unchangedWorld world) command
 
 getCommand :: IO Command
 getCommand = do
@@ -82,7 +82,6 @@ initDisplay = do
   hSetBuffering stdout NoBuffering
   hideCursor
   setTitle "HaskellRogue"
-  clearScreen
 
 resetDisplay :: IO ()
 resetDisplay = do
