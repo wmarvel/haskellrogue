@@ -1,8 +1,8 @@
 module Level.Grid.Types where
 
+import Coord.Types
 import qualified Data.Map as M
 
-type Coord = (Int, Int)
 type CellMap = M.Map Coord Cell
 
 data Cell
@@ -32,12 +32,6 @@ instance Show Grid where
     where
       appendGridRow s y = s ++ (foldr showGridRow "\n" $ cellRowCoords g y)
       showGridRow c s' = (show $ cell c g) ++ s'
-
-(|+|) :: Coord -> Coord -> Coord
-(|+|) (x, y) (x', y') = (x + x', y + y')
-
-(|-|) :: Coord -> Coord -> Coord
-(|-|) (x, y) (x', y') = (x - x', y - y')
 
 cell :: Coord -> Grid -> Cell
 cell c g = M.findWithDefault GridEmpty c $ gCells g

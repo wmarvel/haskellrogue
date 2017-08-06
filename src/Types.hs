@@ -1,9 +1,9 @@
 module Types where
 
+import Coord.Types
 import qualified Data.Map as M
 import qualified Data.Set as S
 
-type Coord = (Int, Int)
 type TileMap = M.Map Coord Tile
 type CoordSet = S.Set Coord
 
@@ -62,18 +62,6 @@ data World = World
   { wHero :: Hero
   , wLevel :: Level
   }
-
-(|+|) :: Coord -> Coord -> Coord
-(|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
-
-bestCoord :: (Int -> Int -> Int) -> Coord -> Coord -> Coord
-bestCoord f (x, y) (x', y') = (f x x', f y y')
-
-minCoord :: Coord -> Coord -> Coord
-minCoord = bestCoord min
-
-maxCoord :: Coord -> Coord -> Coord
-maxCoord = bestCoord max
 
 emptyLevel :: Level
 emptyLevel =

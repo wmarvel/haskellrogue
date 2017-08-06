@@ -1,5 +1,6 @@
 module Console where
 
+import Coord.Types
 import Level
 import Types
 import System.Console.ANSI

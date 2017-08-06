@@ -3,6 +3,7 @@ module Main where
 import System.Console.ANSI
 import System.IO
 
+import Coord.Types
 import Console
 import Level
 import LevelGen

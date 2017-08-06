@@ -1,9 +1,13 @@
 module LevelGen where
+
+import Coord.Types
 import Data.Bits
 import System.Random
 import Types
 import Level
 import qualified Data.Set as S
+import Level.Grid.Types
+import Level.Grid.GrowingTree
 
 data ConnectInfo = ConnectInfo
   { ciLevel :: Level
@@ -67,80 +71,25 @@ randEven x x' = fmap (+ x) $ randEven' (x' - x)
 randBool :: IO Bool
 randBool = getStdRandom $ randomR (False, True)
 
--- Generate a perfect maze - currently uses recursive division.
-insertWall :: [Coord] -> Level -> IO Level
-insertWall coords level = pure $ foldr markWall level coords
-  where markWall coord = updateTile coord Wall
-
-vertCoords :: Int -> Int -> Int -> IO [Coord]
-vertCoords column rMin rMax = do
-  skipVal <- randEven rMin rMax
-  pure $ [(column, row) | row <- [rMin .. rMax], row /= skipVal]
-
-horzCoords :: Int -> Int -> Int -> IO [Coord]
-horzCoords row cMin cMax = do
-  skipVal <- randEven cMin cMax
-  pure $ [(column, row) | column <- [cMin .. cMax], column /= skipVal]
-
-undividable :: Level -> Bool
-undividable level = x' <= x || y' <= y
+-- copy a grid into a level
+copyFromGrid :: Level -> Grid -> IO Level
+copyFromGrid level grid = pure $ foldl copyCell level $ levelCoords level
   where
-    (x, y) = lMin level
-    (x', y') = lMax level
+    copyCell level x = updateTile x (cellToTile (cell x grid)) level
+    cellToTile GridEmpty = Wall
+    cellToTile GridFloor = Floor
+    cellToTile GridEdgeWall = Wall
+    cellToTile GridEdgeHard = Wall
+    cellToTile GridEdgeDoor = Dr Closed
 
 mazifyLevel :: Level -> IO Level
-mazifyLevel level =
-  if undividable level
-    then pure level
-    else do
-      (part1, part2) <- divideLevel level
-      mazified1 <- mazifyLevel part1
-      mazified2 <- mazifyLevel part2
-      pure $ joinLevels mazified1 mazified2
-
-chooseHorizontal :: Level -> IO Bool
-chooseHorizontal level =
-  if levWidth == levHeight
-    then randBool
-    else if levWidth < levHeight
-           then pure True
-           else pure False
+mazifyLevel level = do
+  grid <- mazeGrid gmin gmax
+  copyFromGrid level grid
   where
-    (x, y) = lMin level
-    (x', y') = lMax level
-    levWidth = x' - x
-    levHeight = y' - y
-
-divideLevel :: Level -> IO (Level, Level)
-divideLevel level = do
-  maybeHorizontal <- chooseHorizontal level
-  if maybeHorizontal
-    then divideHorizontal level
-    else divideVertical level
-
-divideHorizontal :: Level -> IO (Level, Level)
-divideHorizontal level = do
-  divRow <- randOdd rowMin rowMax
-  wallCoords <- horzCoords divRow colMin colMax
-  walled <- insertWall wallCoords level
-  pure (part1 walled divRow, part2 walled divRow)
-  where
-    part1 walled divRow = walled { lMax = (colMax, divRow - 1) }
-    part2 walled divRow = walled { lMin = (colMin, divRow + 1) }
-    (colMin, rowMin) = lMin level
-    (colMax, rowMax) = lMax level
-
-divideVertical :: Level -> IO (Level, Level)
-divideVertical level = do
-  divCol <- randOdd colMin colMax
-  wallCoords <- vertCoords divCol rowMin rowMax
-  walled <- insertWall wallCoords level
-  pure (part1 walled divCol, part2 walled divCol)
-  where
-    part1 walled divCol = walled { lMax = (divCol - 1, rowMax) }
-    part2 walled divCol = walled { lMin = (divCol + 1, rowMin) }
-    (colMin, rowMin) = lMin level
-    (colMax, rowMax) = lMax level
+    gmin = lMin level
+    gmax = case lMax level of
+      (x, y) -> (quot x 2, quot y 2)
 
 -- Now that we can generate a perfect maze, drop some rooms in it
 randomLevel :: Level -> IO Level

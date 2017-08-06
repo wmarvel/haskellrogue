@@ -4,6 +4,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import System.Random
 import Types
+import Coord.Types
 
 sizedLevel :: Coord -> Level
 sizedLevel bound = emptyLevel {lMax = bound}

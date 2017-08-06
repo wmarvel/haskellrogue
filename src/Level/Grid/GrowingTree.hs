@@ -1,5 +1,6 @@
 module Level.Grid.GrowingTree where
 
+import Coord.Types
 import Level.Grid.Types
 import System.Random
 import System.Random.Shuffle
@@ -9,7 +10,6 @@ randomElt [] = pure Nothing
 randomElt xs = do
   i <- getStdRandom $ randomR (0, length xs - 1)
   pure $ Just $ xs !! i
-
 
 adjacentNodesOf :: (Cell -> Bool) -> Coord -> Grid -> [Coord]
 adjacentNodesOf f x g = filter predicate (adjacentNodes x)
@@ -31,13 +31,13 @@ mazify g (x:xs) = do
   unvisited <- unvisitedNodesR x g
   case unvisited of
     [] -> mazify g xs
-    (n : _) -> mazify (link (visit g n) x n) (n : x : xs)
+    (n : _) -> mazify (carve g x n) (n : x : xs)
   
-mazeGrid :: IO Grid
-mazeGrid = do
-  x' <- emptyNodeR grid
-  case x' of
+mazeGrid :: Coord -> Coord -> IO Grid
+mazeGrid gmin gmax = do
+  xMaybe <- emptyNodeR grid
+  case xMaybe of
     Nothing -> pure grid
     Just x -> do
       mazify (visit grid x) [x]
-  where grid = emptyUnlinkedGrid (0, 0) (10, 5)
+  where grid = emptyUnlinkedGrid gmin gmax
