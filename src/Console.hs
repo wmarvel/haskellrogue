@@ -4,6 +4,7 @@ import Coord.Types
 import Level
 import Types
 import System.Console.ANSI
+import qualified Data.Set as S
 
 class ConsoleRenderable a where
   toRenderChar :: a -> Char
@@ -84,8 +85,9 @@ screenCoords screen = [(x, y) | x <- [0..xMax], y <- [0..yMax]]
 renderableCoords :: Screen -> Level -> [Coord]
 renderableCoords screen level =
   if sUpdated screen
-    then map (screenToWorld screen) (screenCoords screen)
-    else filter (onScreen screen) $ updatedCoords level
+    then filter seen $ map (screenToWorld screen) (screenCoords screen)
+    else filter seen $ filter (onScreen screen) $ updatedCoords level
+  where seen x = S.member x $ lSeen level
 
 within :: Int -> Int -> Int -> Bool
 within v vMin vMax = vMin <= v && v <= vMax

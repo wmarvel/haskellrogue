@@ -51,6 +51,7 @@ data Level = Level
   , lMax :: Coord
   , lTiles :: TileMap
   , lChanged :: CoordSet
+  , lSeen :: CoordSet
   }
 
 data Screen = Screen
@@ -72,6 +73,7 @@ emptyLevel =
   , lMax = (1, 1)
   , lTiles = M.empty
   , lChanged = S.empty
+  , lSeen = S.empty
   }
 
 commoner :: Hero

@@ -89,6 +89,15 @@ updateTile coord tile level = level { lTiles = tiles, lChanged = changed }
       _ -> M.insert coord tile $ lTiles level
     changed = S.insert coord $ lChanged level
 
+updateSeen :: Coord -> Level -> Level
+updateSeen coord level =
+  if S.member coord $ lSeen level
+    then level
+    else level {lChanged = changed, lSeen = seen}
+  where
+    changed = S.insert coord $ lChanged level
+    seen = S.insert coord $ lSeen level
+
 updatedCoords :: Level -> [Coord]
 updatedCoords = S.toList . lChanged 
 

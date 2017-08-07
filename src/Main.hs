@@ -2,7 +2,6 @@ module Main where
 
 import System.Console.ANSI
 import System.IO
-
 import Coord.Types
 import Console
 import Level
@@ -15,7 +14,7 @@ main = do
   rspawn <- randomSpawn rlevel
   initDisplay
   gameLoop screen $
-    makeWorld {wHero = commoner {hCurPos = rspawn}, wLevel = rlevel}
+    handleSeen $ makeWorld {wHero = commoner {hCurPos = rspawn}, wLevel = rlevel}
   where
     screen = (Screen (0, 0) (79, 24) True)
 
@@ -25,7 +24,9 @@ gameLoop screen world = do
   command <- getCommand
   case command of
     Exit -> exitGame
-    _ -> gameLoop newScreen $ updateWorld (unchangedWorld world) command
+    _ ->
+      gameLoop newScreen $
+      handleSeen $ updateWorld (unchangedWorld world) command
 
 getCommand :: IO Command
 getCommand = do
@@ -60,6 +61,13 @@ moveHero world@(World oldHero _) direction =
         then (x, y)
         else oldPos
     (x, y) = targetCoord oldHero direction
+
+handleSeen :: World -> World
+handleSeen world =
+  world { wLevel = foldl (flip updateSeen) (wLevel world) herosees }
+  where
+    (x, y) = hCurPos $ wHero world
+    herosees = [(x', y') | x' <- [x-1..x+1], y' <- [y-1..y+1]]
 
 opOn :: World -> Direction -> Level
 opOn world Stand = wLevel world
