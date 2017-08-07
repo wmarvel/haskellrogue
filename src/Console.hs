@@ -1,10 +1,10 @@
 module Console where
 
 import Coord.Types
-import Level
-import Types
-import System.Console.ANSI
 import qualified Data.Set as S
+import Level
+import System.Console.ANSI
+import Types
 
 class ConsoleRenderable a where
   toRenderChar :: a -> Char
@@ -79,15 +79,17 @@ renderWorld screen world = do
     hero = wHero world
 
 screenCoords :: Screen -> [Coord]
-screenCoords screen = [(x, y) | x <- [0..xMax], y <- [0..yMax]]
-  where (xMax, yMax) = sSize screen
+screenCoords screen = [(x, y) | x <- [0 .. xMax], y <- [0 .. yMax]]
+  where
+    (xMax, yMax) = sSize screen
 
 renderableCoords :: Screen -> Level -> [Coord]
 renderableCoords screen level =
   if sUpdated screen
     then filter seen $ map (screenToWorld screen) (screenCoords screen)
     else filter seen $ filter (onScreen screen) $ updatedCoords level
-  where seen x = S.member x $ lSeen level
+  where
+    seen x = S.member x $ lSeen level
 
 within :: Int -> Int -> Int -> Bool
 within v vMin vMax = vMin <= v && v <= vMax
@@ -99,7 +101,8 @@ onScreen :: Screen -> Coord -> Bool
 onScreen screen coord =
   case worldToScreen screen coord of
     (x, y) -> within x xMin xMax && within y yMin yMax
-  where ((xMin, yMin), (xMax, yMax)) = screenBounds screen
+  where
+    ((xMin, yMin), (xMax, yMax)) = screenBounds screen
 
 worldToScreen :: Screen -> Coord -> Coord
 worldToScreen screen coord = coord |+| sOffset screen
@@ -117,7 +120,7 @@ inScreenBounds screen hero =
 -- For now we will just set up an offset that centers the screen
 -- on our hero. We can do fancier translations later
 updateScreen :: Screen -> Hero -> Screen
-updateScreen screen hero = screen { sOffset = newOffset, sUpdated = True }
+updateScreen screen hero = screen {sOffset = newOffset, sUpdated = True}
   where
     newOffset = (halfWidth, halfHeight) |-| hCurPos hero
     (sWidth, sHeight) = sSize screen

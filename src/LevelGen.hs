@@ -2,12 +2,12 @@ module LevelGen where
 
 import Coord.Types
 import Data.Bits
+import qualified Data.Set as S
+import Level
+import Level.Grid.GrowingTree
+import Level.Grid.Types
 import System.Random
 import Types
-import Level
-import qualified Data.Set as S
-import Level.Grid.Types
-import Level.Grid.GrowingTree
 
 data ConnectInfo = ConnectInfo
   { ciLevel :: Level
@@ -23,7 +23,7 @@ data Room = Room
   }
 
 data GenContext = GenContext
-  { cRooms   :: Int -- The count of rooms to attempt to place
+  { cRooms :: Int -- The count of rooms to attempt to place
   , cRoomMinDim :: Int -- The minimum dimension of a room (width or height)
   , cRoomMaxDim :: Int -- The maximum dimension of a room (width or height)
   }
@@ -41,7 +41,6 @@ emptyConnectInfo =
   }
 
 -- Some useful random functions.
-
 randInt :: Int -> Int -> IO Int
 randInt rMin rMax = getStdRandom $ randomR (rMin, rMax)
 
@@ -52,8 +51,7 @@ randRoom (GenContext _ dMin dMax) (xMax, yMax) = do
   randCol <- randOdd 0 $ xMax - randWidth
   randRow <- randOdd 0 $ yMax - randHeight
   pure $
-    Room
-    {rPos = (randCol, randRow), rWidth = randWidth, rHeight = randHeight}
+    Room {rPos = (randCol, randRow), rWidth = randWidth, rHeight = randHeight}
 
 randMapped :: (Int -> Int) -> (Int -> Int) -> Int -> IO Int
 randMapped fRes fLim limit = fmap fRes $ randInt 0 $ fLim limit
@@ -88,8 +86,9 @@ mazifyLevel level = do
   copyFromGrid level grid
   where
     gmin = lMin level
-    gmax = case lMax level of
-      (x, y) -> (quot x 2, quot y 2)
+    gmax =
+      case lMax level of
+        (x, y) -> (quot x 2, quot y 2)
 
 -- Now that we can generate a perfect maze, drop some rooms in it
 randomLevel :: Level -> IO Level
@@ -164,16 +163,18 @@ deadEnds level = foldl buildCoords [] $ levelCoords level
         else list
 
 fillDeadEnds :: Level -> Level
-fillDeadEnds level = case deadEnds level of
-  [] -> level
-  deads -> fillDeadEnds $ onePass deads
+fillDeadEnds level =
+  case deadEnds level of
+    [] -> level
+    deads -> fillDeadEnds $ onePass deads
   where
     fillDeadEnd level' coord = updateTile coord Wall level'
     onePass ends = foldl fillDeadEnd level ends
 
 fullyConnected :: ConnectInfo -> Bool
 fullyConnected ci = ciConnected ci == occupiableCoords lvl
-  where lvl = ciLevel ci
+  where
+    lvl = ciLevel ci
 
 reconnectLevel :: GenContext -> Level -> IO Level
 reconnectLevel _ level = do
@@ -184,10 +185,3 @@ reconnectLevel _ level = do
       if fullyConnected ci
         then pure $ ciLevel ci
         else pure $ ciLevel ci
-
-
-
-
-  
-
-

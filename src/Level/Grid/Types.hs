@@ -6,19 +6,18 @@ import qualified Data.Map as M
 type CellMap = M.Map Coord Cell
 
 data Cell
-  = GridEmpty    -- Nothing done - default value
-  | GridFloor    -- vertex in-graph or presence of edge
+  = GridEmpty -- Nothing done - default value
+  | GridFloor -- vertex in-graph or presence of edge
   | GridEdgeWall -- Absence of an edge
-  | GridEdgeDoor -- Absence of an edge (special)  
+  | GridEdgeDoor -- Absence of an edge (special)
   | GridWallHard -- vertex or edge unreachable
-  deriving Eq
+  deriving (Eq)
 
 data Grid = Grid
   { gMin :: Coord
   , gMax :: Coord
   , gCells :: CellMap
-  }
-  deriving Eq
+  } deriving (Eq)
 
 instance Show Cell where
   show GridEmpty = "?"
@@ -38,13 +37,14 @@ cell c g = M.findWithDefault GridEmpty c $ gCells g
 
 -- Get coords in cell space of every cell in a row
 rowCells :: Int -> Grid -> [Coord]
-rowCells y g = case ((gridToCell $gMin g), (gridToCell $ gMax g)) of
-  ((x, _), (x', _)) -> [(x'', 2 * y) | x'' <- [x..x']]
-
+rowCells y g =
+  case ((gridToCell $gMin g), (gridToCell $ gMax g)) of
+    ((x, _), (x', _)) -> [(x'', 2 * y) | x'' <- [x .. x']]
 
 colCells :: Int -> Grid -> [Coord]
-colCells x g = case ((gridToCell $gMin g), (gridToCell $ gMax g)) of
-  ((_, y), (_, y')) -> [(2 * x, y'') | y'' <- [y..y']]
+colCells x g =
+  case ((gridToCell $gMin g), (gridToCell $ gMax g)) of
+    ((_, y), (_, y')) -> [(2 * x, y'') | y'' <- [y .. y']]
 
 -- Is a coordinate in cell space a node coordinate?
 isNodeCoord :: Coord -> Bool
@@ -57,13 +57,12 @@ isLinkCoord (x, y) = (odd x) || (odd y)
 cellRows :: Grid -> [Int]
 cellRows (Grid gmin gmax _) =
   case (gridToCell gmin, gridToCell gmax) of
-    ((_, y), (_, y')) -> [y..y']
+    ((_, y), (_, y')) -> [y .. y']
 
 cellRowCoords :: Grid -> Int -> [Coord]
 cellRowCoords (Grid gmin gmax _) y =
   case (gridToCell gmin, gridToCell gmax) of
-    ((x, _), (x', _)) ->
-      [(x'', y) | x'' <- [x..x']]
+    ((x, _), (x', _)) -> [(x'', y) | x'' <- [x .. x']]
 
 cellCoordsUsing :: (Coord -> Bool) -> Grid -> [Coord]
 cellCoordsUsing f (Grid gmin gmax _) =
@@ -88,7 +87,7 @@ gridToCell :: Coord -> Coord
 gridToCell (x, y) = (x * 2, y * 2)
 
 emptyGrid :: Coord -> Coord -> Grid
-emptyGrid gmin gmax = Grid { gMin = gmin, gMax = gmax, gCells = M.empty }
+emptyGrid gmin gmax = Grid {gMin = gmin, gMax = gmax, gCells = M.empty}
 
 emptyLinkedGrid :: Coord -> Coord -> Grid
 emptyLinkedGrid gmin gmax = setAllLinks GridFloor $ emptyGrid gmin gmax
@@ -107,13 +106,14 @@ bordered g@(Grid (xmin, ymin) (xmax, ymax) _) =
 
 -- | Set a specific cell using a cell space coordinate
 setCell :: Cell -> Grid -> Coord -> Grid
-setCell c g x = g { gCells = M.insert x c $ gCells g }
+setCell c g x = g {gCells = M.insert x c $ gCells g}
 
 -- | Get the cell space coordinate of the edge between two adjacent cells
 edgeCoord :: Coord -> Coord -> Coord
 edgeCoord c1 c2 = gridToCell c1 |+| delta
-  where delta = c2 |-| c1
-  
+  where
+    delta = c2 |-| c1
+
 -- | set the edge between two adjacent cells
 setLink :: Cell -> Grid -> Coord -> Coord -> Grid
 setLink v g c1 c2 = setCell v g $ edgeCoord c1 c2
@@ -178,5 +178,3 @@ isLinkInBounds (Grid gmin gmax _) (x, y) =
 -- links in cell space of vertex in grid space
 links :: Coord -> [Coord]
 links = crossCoords . gridToCell
-
-

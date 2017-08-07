@@ -1,11 +1,11 @@
 module Main where
 
-import System.Console.ANSI
-import System.IO
-import Coord.Types
 import Console
+import Coord.Types
 import Level
 import LevelGen
+import System.Console.ANSI
+import System.IO
 import Types
 
 main :: IO ()
@@ -14,7 +14,8 @@ main = do
   rspawn <- randomSpawn rlevel
   initDisplay
   gameLoop screen $
-    handleSeen $ makeWorld {wHero = commoner {hCurPos = rspawn}, wLevel = rlevel}
+    handleSeen $
+    makeWorld {wHero = commoner {hCurPos = rspawn}, wLevel = rlevel}
   where
     screen = (Screen (0, 0) (79, 24) True)
 
@@ -32,7 +33,8 @@ getCommand :: IO Command
 getCommand = do
   char <- getChar
   case char of
-    c | c `elem` "wasdkulnjbhy" -> return $ Move $ getDirection c
+    c
+      | c `elem` "wasdkulnjbhy" -> return $ Move $ getDirection c
     'o' -> do
       ochar <- getChar
       return $ Operate $ getDirection ochar
@@ -41,7 +43,8 @@ getCommand = do
 
 canOccupy :: Coord -> World -> Bool
 canOccupy coord world = not $ isWall coord level || isClosedDoor coord level
-  where level = wLevel world
+  where
+    level = wLevel world
 
 targetCoord :: Hero -> Direction -> Coord
 targetCoord hero dir = hCurPos hero |+| toDirDelta dir
@@ -50,7 +53,7 @@ updateWorld :: World -> Command -> World
 updateWorld world (Move dir) = world {wHero = moveHero world dir}
 updateWorld world (Operate dir) = world {wLevel = opOn world dir}
 updateWorld world _ = world
-  
+
 moveHero :: World -> Direction -> Hero
 moveHero world@(World oldHero _) direction =
   oldHero {hCurPos = newPos, hOldPos = oldPos}
@@ -64,10 +67,10 @@ moveHero world@(World oldHero _) direction =
 
 handleSeen :: World -> World
 handleSeen world =
-  world { wLevel = foldl (flip updateSeen) (wLevel world) herosees }
+  world {wLevel = foldl (flip updateSeen) (wLevel world) herosees}
   where
     (x, y) = hCurPos $ wHero world
-    herosees = [(x', y') | x' <- [x-1..x+1], y' <- [y-1..y+1]]
+    herosees = [(x', y') | x' <- [x - 1 .. x + 1], y' <- [y - 1 .. y + 1]]
 
 opOn :: World -> Direction -> Level
 opOn world Stand = wLevel world
