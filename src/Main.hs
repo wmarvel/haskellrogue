@@ -7,6 +7,7 @@ import LevelGen
 import System.Console.ANSI
 import System.IO
 import Types
+import FOV
 
 main :: IO ()
 main = do
@@ -65,12 +66,15 @@ moveHero world@(World oldHero _) direction =
         else oldPos
     (x, y) = targetCoord oldHero direction
 
+fovRays' :: [[Coord]]
+fovRays' = fovRays 12
+
 handleSeen :: World -> World
 handleSeen world =
   world {wLevel = foldl (flip updateSeen) (wLevel world) herosees}
   where
-    (x, y) = hCurPos $ wHero world
-    herosees = [(x', y') | x' <- [x - 1 .. x + 1], y' <- [y - 1 .. y + 1]]
+    pos = hCurPos $ wHero world
+    herosees = fov pos fovRays' $ wLevel world 
 
 opOn :: World -> Direction -> Level
 opOn world Stand = wLevel world
@@ -92,7 +96,8 @@ initDisplay = do
   hSetBuffering stdin NoBuffering
   hSetBuffering stdout NoBuffering
   hideCursor
-  setTitle "HaskellRogue"
+  setTitle "hRogue"
+  clearScreen
 
 resetDisplay :: IO ()
 resetDisplay = do
