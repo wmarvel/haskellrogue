@@ -44,15 +44,20 @@ line pa@(xa, ya) pb@(xb, yb) = map maySwitch . L.unfoldr go $ (x1, y1, 0)
           if (2 * tempError) >= dx
             then (yTemp + yInc, tempError - dx)
             else (yTemp, tempError)
-      
+
 -- compute a list of rays from (0,0) to points on the radius
 fovRays :: Int -> [[Coord]]
 fovRays r = map dline $ fovPoints r
   where
     dr = (fromIntegral :: Int -> Double) r
-    fint z = (fromIntegral :: Int -> Double) z
-    dline coord = filter distance $ zline coord
-    distance (x, y) = sqrt (fint (abs x + abs y)) < dr
+    dline coord = filter inDistance $ zline coord
+    inDistance coord = distance (0, 0) coord < dr
+
+distance :: Coord -> Coord -> Double
+distance (x, y) (x', y') = sqrt $ fromIntegral $ (leg * leg) + (leg' * leg')
+  where
+    leg = x' - x
+    leg' = y' - y
 
 fovPoints :: Int -> [Coord]
 fovPoints r = [(x, y) | x <- [-r..r], y <- [-r..r], abs y == r || abs x == r]

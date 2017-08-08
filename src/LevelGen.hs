@@ -85,10 +85,9 @@ mazifyLevel level = do
   grid <- mazeGrid gmin gmax
   copyFromGrid level grid
   where
-    gmin = lMin level
-    gmax =
-      case lMax level of
-        (x, y) -> (quot x 2, quot y 2)
+    toGrid (x, y) = (quot x 2, quot y 2)
+    gmin = toGrid $ lMin level
+    gmax = toGrid $ lMax level
 
 -- Now that we can generate a perfect maze, drop some rooms in it
 randomLevel :: Level -> IO Level
