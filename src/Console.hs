@@ -15,7 +15,7 @@ class ConsoleRenderable a where
 instance ConsoleRenderable Hero where
   toRenderChar _ = '@'
   toRenderSGR _ =
-    [SetColor Foreground Vivid White]
+    [SetConsoleIntensity BoldIntensity, SetColor Foreground Vivid White]
 
 instance ConsoleRenderable Tile where
   toRenderChar tile =
