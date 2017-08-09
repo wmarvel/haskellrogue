@@ -4,6 +4,7 @@ import Coord.Types
 import Types (Level)
 import Level
 
+import qualified Data.Set as S
 import qualified Data.List as L
 
 -- This is going to be dumb and slow initially.
@@ -63,13 +64,13 @@ fovPoints :: Int -> [Coord]
 fovPoints r = [(x, y) | x <- [-r..r], y <- [-r..r], abs y == r || abs x == r]
 
 fov :: Coord -> [[Coord]] -> Level -> [Coord]
-fov off rays lvl = foldl maybeAdd [] rays
+fov off rays lvl = S.toList $ foldl maybeAdd S.empty rays
   where
     realCoord p = p |+| off
     maybeAdd result [] = result
     maybeAdd result (x:xs) =
       if isWall coord lvl
-        then (coord : result)
-        else maybeAdd (coord : result) xs
+        then S.insert coord result
+        else maybeAdd (S.insert coord result) xs
       where
         coord = realCoord x

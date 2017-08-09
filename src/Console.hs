@@ -6,6 +6,8 @@ import Level
 import System.Console.ANSI
 import Types
 
+data BoldInfo a = Bolded a | Normal a
+
 class ConsoleRenderable a where
   toRenderChar :: a -> Char
   toRenderSGR :: a -> [SGR]
@@ -13,7 +15,7 @@ class ConsoleRenderable a where
 instance ConsoleRenderable Hero where
   toRenderChar _ = '@'
   toRenderSGR _ =
-    [SetConsoleIntensity BoldIntensity, SetColor Foreground Vivid White]
+    [SetColor Foreground Vivid White]
 
 instance ConsoleRenderable Tile where
   toRenderChar tile =
@@ -27,17 +29,38 @@ instance ConsoleRenderable Tile where
   toRenderSGR tile =
     case tile of
       (Dr Closed) ->
-        [SetConsoleIntensity NormalIntensity, SetColor Foreground Dull Magenta]
+        [SetColor Foreground Dull Magenta]
       (Dr Opened) ->
-        [SetConsoleIntensity NormalIntensity, SetColor Foreground Dull Magenta]
+        [SetColor Foreground Dull Magenta]
       (St Down) ->
-        [SetConsoleIntensity BoldIntensity, SetColor Foreground Vivid Blue]
+        [SetColor Foreground Dull Blue]
       (St Up) ->
-        [SetConsoleIntensity BoldIntensity, SetColor Foreground Vivid Blue]
+        [SetColor Foreground Dull Blue]
       Wall ->
         [SetConsoleIntensity NormalIntensity, SetColor Foreground Vivid White]
       Floor ->
-        [SetConsoleIntensity NormalIntensity, SetColor Foreground Dull White]
+        [SetColor Foreground Dull White]
+
+instance ConsoleRenderable a => ConsoleRenderable (BoldInfo a) where
+  toRenderChar (Normal x) = case toRenderChar x of
+    '.' -> ' '
+    c -> c
+  toRenderChar (Bolded x) = toRenderChar x
+  toRenderSGR bi = (toIntensity bi) : map toVivid' (toRenderSGR $ extract bi)
+    where
+      toVivid' = toVivid bi
+
+extract :: BoldInfo a -> a
+extract (Bolded x) = x
+extract (Normal x) = x
+
+toVivid :: BoldInfo a -> SGR -> SGR
+toVivid (Bolded _) (SetColor fgbg Dull color) = SetColor fgbg Vivid color
+toVivid _ x = x
+
+toIntensity :: BoldInfo a -> SGR
+toIntensity (Bolded _) = (SetConsoleIntensity BoldIntensity)
+toIntensity _ = (SetConsoleIntensity NormalIntensity)
 
 render :: (ConsoleRenderable a) => Screen -> Coord -> a -> IO ()
 render screen coord x = do
@@ -50,7 +73,13 @@ coordToTile (World _ level) coord = lookupTile coord level
 
 renderCoord :: Screen -> World -> Coord -> IO ()
 renderCoord screen world coord = do
-  render screen coord $ coordToTile world coord
+  render screen coord maybeBold
+  where
+    tile = coordToTile world coord
+    maybeBold =
+      if isVisible coord world
+        then Bolded tile
+        else Normal tile
 
 renderHero :: Screen -> World -> IO ()
 renderHero screen world@(World hero@(Hero curPos oldPos) _) = do
@@ -68,7 +97,7 @@ renderCoords screen world coords = do
 
 renderWorld :: Screen -> World -> IO Screen
 renderWorld screen world = do
-  renderCoords uScreen world $ renderableCoords uScreen $ wLevel world
+  renderCoords uScreen world $ renderableCoords uScreen world
   renderHero uScreen world
   pure $ uScreen
   where
@@ -83,13 +112,14 @@ screenCoords screen = [(x, y) | x <- [0 .. xMax], y <- [0 .. yMax]]
   where
     (xMax, yMax) = sSize screen
 
-renderableCoords :: Screen -> Level -> [Coord]
-renderableCoords screen level =
+renderableCoords :: Screen -> World -> [Coord]
+renderableCoords screen world =
   if sUpdated screen
     then filter seen $ map (screenToWorld screen) (screenCoords screen)
     else filter seen $ filter (onScreen screen) $ updatedCoords level
   where
     seen x = S.member x $ lSeen level
+    level = wLevel world
 
 within :: Int -> Int -> Int -> Bool
 within v vMin vMax = vMin <= v && v <= vMax

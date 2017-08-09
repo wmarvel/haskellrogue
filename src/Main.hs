@@ -15,7 +15,7 @@ main = do
   rspawn <- randomSpawn rlevel
   initDisplay
   gameLoop screen $
-    handleSeen $
+    handleVisibles $
     makeWorld {wHero = commoner {hCurPos = rspawn}, wLevel = rlevel}
   where
     screen = (Screen (0, 0) (79, 24) True)
@@ -28,7 +28,7 @@ gameLoop screen world = do
     Exit -> exitGame
     _ ->
       gameLoop newScreen $
-      handleSeen $ updateWorld (unchangedWorld world) command
+      handleVisibles $ updateWorld (unchangedWorld world) command
 
 getCommand :: IO Command
 getCommand = do
@@ -69,9 +69,9 @@ moveHero world@(World oldHero _) direction =
 fovRays' :: [[Coord]]
 fovRays' = fovRays 12
 
-handleSeen :: World -> World
-handleSeen world =
-  world {wLevel = foldl (flip updateSeen) (wLevel world) herosees}
+handleVisibles :: World -> World
+handleVisibles world =
+  world {wLevel = foldl (flip updateVisible) (wLevel world) herosees}
   where
     pos = hCurPos $ wHero world
     herosees = fov pos fovRays' $ wLevel world 

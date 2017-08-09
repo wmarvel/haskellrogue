@@ -58,21 +58,23 @@ updateTile coord tile level = level {lTiles = tiles, lChanged = changed}
         _ -> M.insert coord tile $ lTiles level
     changed = S.insert coord $ lChanged level
 
-updateSeen :: Coord -> Level -> Level
-updateSeen coord level =
-  if S.member coord $ lSeen level
-    then level
-    else level {lChanged = changed, lSeen = seen}
+updateVisible :: Coord -> Level -> Level
+updateVisible coord level =
+  level {lChanged = changed, lSeen = seen, lVisible = visible}
   where
     changed = S.insert coord $ lChanged level
     seen = S.insert coord $ lSeen level
+    visible = S.insert coord $ lVisible level
+
+isVisible :: Coord -> World -> Bool
+isVisible coord world = S.member coord $ lVisible $ wLevel world
 
 updatedCoords :: Level -> [Coord]
 updatedCoords = S.toList . lChanged
 
 unchangedWorld :: World -> World
 unchangedWorld world@(World _ level) =
-  world {wLevel = level {lChanged = S.empty}}
+  world {wLevel = level {lChanged = lVisible level, lVisible = S.empty}}
 
 changedWorld :: World -> World
 changedWorld world@(World _ level) =
