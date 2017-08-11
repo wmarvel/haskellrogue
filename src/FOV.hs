@@ -3,74 +3,50 @@ module FOV where
 import Coord.Types
 import Types (Level)
 import Level
-
-import qualified Data.Set as S
 import qualified Data.List as L
+import qualified Data.Set as S
 
--- This is going to be dumb and slow initially.
--- When I can get/write a good trie implementation it will be better
--- but for now, we will generate a list of all rays in a radius starting
--- at 0, 0 and when we need a FOV we will just map the hero's hCurPos
--- over that precomputed list of rays, marking as visible as we go, until
--- we hit a wall on that ray.
-zline :: Coord -> [Coord]
-zline c = maybeReverse $ line (0, 0) c
+type RaySet = S.Set [Coord]
+
+-- This is a simple raycasting FOV algorithm 
+-- a) Precompute a set of rays from (0, 0) for a radius
+-- b) when an FOV is needed, follow each ray, marking cells as visible,
+--    until a wall is hit
+
+-- Given an angle in radians, a unit vector
+unitVector :: Double -> (Double, Double)
+unitVector θ = (cos θ, sin θ)
+
+-- Given an angle in radians and a length, the Coord of the cell containing
+-- the end point, relative to (0,0)
+endPoint :: Double -> Double -> Coord
+endPoint θ len = (truncate (x * len), truncate (y * len))
+  where (x, y) = unitVector θ
+
+-- Given an angle in radians and a length, the list of Coord for a line
+-- of the given length, starting at (0,0)
+ray :: Double -> Double -> [Coord]
+ray θ len = L.nub $ map (endPoint θ) [0.0,0.125 .. len]
+
+-- Given a radius, compute the set of rays for a field of view
+fovRays :: Int -> RaySet
+fovRays len = foldl (flip S.insert) S.empty rays
   where
-    maybeReverse xs@((0, 0):_) = xs
-    maybeReverse xs = reverse xs
-    
+    len' = fromIntegral len - 0.5
+    dθ = 2 * pi / 180
+    rays = map (flip ray len') [0.0,dθ..2.0*pi]
 
--- adapted from https://wiki.haskell.org/Bresenham's_line_drawing_algorithm
-line :: Coord -> Coord -> [Coord]
-line pa@(xa, ya) pb@(xb, yb) = map maySwitch . L.unfoldr go $ (x1, y1, 0)
+-- Given a coordinate, a set of rays, and a level,
+-- compute the field of view at the coordinate
+fov :: Coord -> RaySet -> Level -> [Coord]
+fov off rays lvl = foldl maybeAdd [] rays
   where
-    steep = abs (yb - ya) > abs (xb - xa)
-    maySwitch =
-      if steep
-        then (\(x, y) -> (y, x))
-        else id
-    [(x1, y1), (x2, y2)] = L.sort [maySwitch pa, maySwitch pb]
-    dx = x2 - x1
-    dy = abs (y2 - y1)
-    yInc =
-      if y1 < y2
-        then 1
-        else -1
-    go (xTemp, yTemp, e)
-      | xTemp > x2 = Nothing
-      | otherwise = Just ((xTemp, yTemp), (xTemp + 1, yNew, eNew))
-      where
-        tempError = e + dy
-        (yNew, eNew) =
-          if (2 * tempError) >= dx
-            then (yTemp + yInc, tempError - dx)
-            else (yTemp, tempError)
-
--- compute a list of rays from (0,0) to points on the radius
-fovRays :: Int -> [[Coord]]
-fovRays r = map dline $ fovPoints r
-  where
-    dr = (fromIntegral :: Int -> Double) r
-    dline coord = filter inDistance $ zline coord
-    inDistance coord = distance (0, 0) coord < dr
-
-distance :: Coord -> Coord -> Double
-distance (x, y) (x', y') = sqrt $ fromIntegral $ (leg * leg) + (leg' * leg')
-  where
-    leg = x' - x
-    leg' = y' - y
-
-fovPoints :: Int -> [Coord]
-fovPoints r = [(x, y) | x <- [-r..r], y <- [-r..r], abs y == r || abs x == r]
-
-fov :: Coord -> [[Coord]] -> Level -> [Coord]
-fov off rays lvl = S.toList $ foldl maybeAdd S.empty rays
-  where
-    realCoord p = p |+| off
     maybeAdd result [] = result
     maybeAdd result (x:xs) =
       if isWall coord lvl
-        then S.insert coord result
-        else maybeAdd (S.insert coord result) xs
+        then result'
+        else maybeAdd result' xs
       where
-        coord = realCoord x
+        result' = (coord : result)
+        coord = x |+| off
+

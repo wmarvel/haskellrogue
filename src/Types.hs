@@ -5,7 +5,6 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 type TileMap = M.Map Coord Tile
-type CoordSet = S.Set Coord
 
 data Tile
   = Dr Door

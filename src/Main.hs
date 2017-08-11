@@ -66,7 +66,7 @@ moveHero world@(World oldHero _) direction =
         else oldPos
     (x, y) = targetCoord oldHero direction
 
-fovRays' :: [[Coord]]
+fovRays' :: RaySet
 fovRays' = fovRays 12
 
 handleVisibles :: World -> World

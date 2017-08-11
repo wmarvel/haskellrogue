@@ -1,6 +1,9 @@
 module Coord.Types where
 
+import qualified Data.Set as S
+
 type Coord = (Int, Int)
+type CoordSet = S.Set Coord
 
 (|+|) :: Coord -> Coord -> Coord
 (|+|) (x, y) (x', y') = (x + x', y + y')
