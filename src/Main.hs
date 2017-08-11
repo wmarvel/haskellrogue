@@ -14,15 +14,18 @@ main = do
   rlevel <- randomLevel $ levelAllFloor (100, 100)
   rspawn <- randomSpawn rlevel
   initDisplay
-  gameLoop screen $
-    handleVisibles $
-    makeWorld {wHero = commoner {hCurPos = rspawn}, wLevel = rlevel}
+  startGame rlevel rspawn
+
+startGame :: Level -> Coord -> IO ()
+startGame rlevel rspawn = gameLoop screen $ handleVisibles $ world
   where
-    screen = (Screen (0, 0) (79, 24) True)
+    hero = commoner {hCurPos = rspawn, hOldPos = rspawn}
+    world = makeWorld {wHero = hero, wLevel = rlevel}
+    screen = initialScreen hero
 
 gameLoop :: Screen -> World -> IO ()
 gameLoop screen world = do
-  newScreen <- renderWorld screen world
+  newScreen <- renderWorld screen world fovRadius
   command <- getCommand
   case command of
     Exit -> exitGame
@@ -66,8 +69,11 @@ moveHero world@(World oldHero _) direction =
         else oldPos
     (x, y) = targetCoord oldHero direction
 
+fovRadius :: Int
+fovRadius = 6
+
 fovRays' :: RaySet
-fovRays' = fovRays 12
+fovRays' = fovRays fovRadius
 
 handleVisibles :: World -> World
 handleVisibles world =

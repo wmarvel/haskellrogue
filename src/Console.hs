@@ -95,14 +95,14 @@ renderCoords screen world coords = do
     else pure ()
   mapM_ (renderCoord screen world) coords
 
-renderWorld :: Screen -> World -> IO Screen
-renderWorld screen world = do
+renderWorld :: Screen -> World -> Int -> IO Screen
+renderWorld screen world radius = do
   renderCoords uScreen world $ renderableCoords uScreen world
   renderHero uScreen world
   pure $ uScreen
   where
     uScreen =
-      if inScreenBounds screen hero
+      if inScreenBounds screen hero radius
         then screen {sUpdated = False}
         else updateScreen screen hero
     hero = wHero world
@@ -140,18 +140,25 @@ worldToScreen screen coord = coord |+| sOffset screen
 screenToWorld :: Screen -> Coord -> Coord
 screenToWorld screen coord = coord |-| sOffset screen
 
-inScreenBounds :: Screen -> Hero -> Bool
-inScreenBounds screen hero =
-  within xHero (xMin + 1) (xMax - 1) && within yHero (yMin + 1) (yMax - 1)
+inScreenBounds :: Screen -> Hero -> Int -> Bool
+inScreenBounds screen hero radius =
+  within xHero (xMin + d) (xMax - d) && within yHero (yMin + d) (yMax - d)
   where
+    d = radius - 1
     (xHero, yHero) = worldToScreen screen $ hCurPos hero
     ((xMin, yMin), (xMax, yMax)) = screenBounds screen
 
--- For now we will just set up an offset that centers the screen
--- on our hero. We can do fancier translations later
+-- translate the screen position by how much we moved in the same direction
 updateScreen :: Screen -> Hero -> Screen
 updateScreen screen hero = screen {sOffset = newOffset, sUpdated = True}
   where
+    delta = (hOldPos hero) |-| (hCurPos hero)
+    newOffset = sOffset screen |+| delta
+
+initialScreen :: Hero -> Screen
+initialScreen hero = screen {sOffset = newOffset, sUpdated = True}
+  where
+    screen = Screen (0,0) (79,24) True
     newOffset = (halfWidth, halfHeight) |-| hCurPos hero
     (sWidth, sHeight) = sSize screen
     halfWidth = quot sWidth 2
