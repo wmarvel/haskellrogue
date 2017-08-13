@@ -102,7 +102,7 @@ renderWorld screen world radius = do
   pure $ uScreen
   where
     uScreen =
-      if inScreenBounds screen hero radius
+      if inScreenBounds screen world
         then screen {sUpdated = False}
         else updateScreen screen hero
     hero = wHero world
@@ -129,9 +129,9 @@ screenBounds screen = ((0, 0), sSize screen)
 
 onScreen :: Screen -> Coord -> Bool
 onScreen screen coord =
-  case worldToScreen screen coord of
-    (x, y) -> within x xMin xMax && within y yMin yMax
+  within x xMin xMax && within y yMin yMax
   where
+    (x, y) = worldToScreen screen coord
     ((xMin, yMin), (xMax, yMax)) = screenBounds screen
 
 worldToScreen :: Screen -> Coord -> Coord
@@ -140,20 +140,18 @@ worldToScreen screen coord = coord |+| sOffset screen
 screenToWorld :: Screen -> Coord -> Coord
 screenToWorld screen coord = coord |-| sOffset screen
 
-inScreenBounds :: Screen -> Hero -> Int -> Bool
-inScreenBounds screen hero radius =
-  within xHero (xMin + d) (xMax - d) && within yHero (yMin + d) (yMax - d)
-  where
-    d = radius - 1
-    (xHero, yHero) = worldToScreen screen $ hCurPos hero
-    ((xMin, yMin), (xMax, yMax)) = screenBounds screen
-
+-- Hero is inbounds if all visible tiles are inbounds.
+inScreenBounds :: Screen -> World -> Bool
+inScreenBounds screen world =
+  all (onScreen screen) $ S.toList $ lVisible $ wLevel world
+      
 -- translate the screen position by how much we moved in the same direction
 updateScreen :: Screen -> Hero -> Screen
-updateScreen screen hero = screen {sOffset = newOffset, sUpdated = True}
-  where
-    delta = (hOldPos hero) |-| (hCurPos hero)
-    newOffset = sOffset screen |+| delta
+updateScreen _ = initialScreen
+-- updateScreen screen hero = screen {sOffset = newOffset, sUpdated = True}
+--   where
+--     delta = (hOldPos hero) |-| (hCurPos hero)
+--     newOffset = sOffset screen |+| delta
 
 initialScreen :: Hero -> Screen
 initialScreen hero = screen {sOffset = newOffset, sUpdated = True}
