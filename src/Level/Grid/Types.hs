@@ -64,6 +64,12 @@ cellRowCoords (Grid gmin gmax _) y =
   case (gridToCell gmin, gridToCell gmax) of
     ((x, _), (x', _)) -> [(x'', y) | x'' <- [x .. x']]
 
+allCellCoords :: Grid -> [Coord]
+allCellCoords (Grid gmin gmax _) =
+  [(x'', y'') | x'' <- [x .. x'], y'' <- [y .. y']]
+  where
+    ((x, y), (x', y')) = (gridToCell gmin, gridToCell gmax)
+  
 cellCoordsUsing :: (Coord -> Bool) -> Grid -> [Coord]
 cellCoordsUsing f (Grid gmin gmax _) =
   case (gridToCell gmin, gridToCell gmax) of
@@ -73,7 +79,7 @@ cellCoordsUsing f (Grid gmin gmax _) =
 nodeCoords :: Grid -> [Coord]
 nodeCoords (Grid (x, y) (x', y') _) =
   [(x'', y'') | x'' <- [x .. x'], y'' <- [y .. y']]
-
+  
 nodeCellCoords :: Grid -> [Coord]
 nodeCellCoords = cellCoordsUsing isNodeCoord
 
@@ -89,13 +95,18 @@ gridToCell (x, y) = (x * 2, y * 2)
 emptyGrid :: Coord -> Coord -> Grid
 emptyGrid gmin gmax = Grid {gMin = gmin, gMax = gmax, gCells = M.empty}
 
+allFloorGrid :: Coord -> Coord -> Grid
+allFloorGrid gmin gmax = setAllCells GridFloor coords grid
+  where
+    grid = emptyGrid gmin gmax
+    coords = allCellCoords grid
+
 emptyLinkedGrid :: Coord -> Coord -> Grid
 emptyLinkedGrid gmin gmax = setAllLinks GridFloor $ emptyGrid gmin gmax
 
 emptyUnlinkedGrid :: Coord -> Coord -> Grid
 emptyUnlinkedGrid gmin gmax = setAllLinks GridEdgeWall $ emptyGrid gmin gmax
 
--- setAllCells v (linkCellCoords g) g
 bordered :: Grid -> Grid
 bordered g@(Grid (xmin, ymin) (xmax, ymax) _) =
   setAllCells GridWallHard (colCells xmin g) southBordered

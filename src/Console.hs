@@ -95,8 +95,8 @@ renderCoords screen world coords = do
     else pure ()
   mapM_ (renderCoord screen world) coords
 
-renderWorld :: Screen -> World -> Int -> IO Screen
-renderWorld screen world radius = do
+renderWorld :: Screen -> World -> IO Screen
+renderWorld screen world = do
   renderCoords uScreen world $ renderableCoords uScreen world
   renderHero uScreen world
   pure $ uScreen
@@ -149,7 +149,7 @@ inScreenBounds screen world =
 updateScreen :: Screen -> Hero -> Screen
 updateScreen _ = initialScreen
 -- updateScreen screen hero = screen {sOffset = newOffset, sUpdated = True}
---   where
+--    where
 --     delta = (hOldPos hero) |-| (hCurPos hero)
 --     newOffset = sOffset screen |+| delta
 

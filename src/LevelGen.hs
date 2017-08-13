@@ -95,7 +95,7 @@ randomLevel level = do
   maze <- mazifyLevel level
   placed <- placeRooms maze $ generateRooms defaultContext $ lMax maze
   connected <- reconnectLevel defaultContext placed
-  pure $ fillDeadEnds connected
+  placeStairs $ fillDeadEnds connected
 
 roomsCollide :: Room -> Room -> Bool
 roomsCollide (Room (x, y) width height) (Room (x', y') width' height') =
@@ -115,6 +115,20 @@ generateRooms ctx coord = foldl passCollision (pure []) [0 .. cRooms ctx]
       if anyRoomsCollide room rooms
         then iorooms
         else pure $ room : rooms
+
+placeStairs :: Level -> IO Level
+placeStairs level = do
+  level' <- placeUp level
+  down <- randomSpawn level
+  putStair down (St Down) level'
+  where
+    putStair coord stype lvl = pure $ updateTile coord stype lvl
+    placeUp lvl =
+      if lDepth lvl > 0
+        then do
+          up <- randomSpawn lvl
+          putStair up (St Up) lvl
+        else pure lvl
 
 placeRoom :: Level -> Room -> Level
 placeRoom level (Room (x, y) width height) =

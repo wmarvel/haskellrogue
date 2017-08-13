@@ -30,11 +30,8 @@ isWall = isTile (== Wall) True
 isFloor :: Coord -> Level -> Bool
 isFloor = isTile (== Floor) False
 
-isDownStairs :: Coord -> Level -> Bool
-isDownStairs = isTile (== (St Down)) False
-
-isUpStairs :: Coord -> Level -> Bool
-isUpStairs = isTile (== (St Up)) False
+isStairs :: Stairs -> Coord -> Level -> Bool
+isStairs stairs = isTile (== (St stairs)) False
 
 isOccupiable :: Coord -> Level -> Bool
 isOccupiable coord = not . isWall coord

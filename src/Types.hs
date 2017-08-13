@@ -26,6 +26,7 @@ data Stairs
 data Command
   = Move Direction
   | Operate Direction
+  | TakeStair Stairs
   | Exit
 
 data Direction
