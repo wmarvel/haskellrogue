@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
 module Level.Grid.GrowingTree where
 
 import Coord.Types
@@ -6,29 +5,32 @@ import Level.Grid.Types
 import System.Random
 import System.Random.Shuffle
 
-data MazeAlgo
-  = Backtrack
+-- Using FRecBT as the frontier results in a recursive backtracker
+data FRecBT = FRecBT [Coord]
 
-class (Eq a) => Frontier a where
-  fmake :: a -> a
-  fempty :: a
+-- Using FPrim as the frontier results in Prim's algorithm
+data FPrim = FPrim [Coord]
+
+data MazeAlgo = MazeRecBT | MazePrim
+
+class Frontier a where
   fadd :: Coord -> a -> a
   fremove :: Coord -> a -> a
   fselect :: a -> IO (Maybe Coord)
 
-instance Frontier [Coord] where
-  fmake x = x
-  fempty = []
-  fadd = (:)
-  fremove c l =
-    case l of
-      [] -> []
-      (c':cs) ->
-        if c == c'
-          then cs
-          else c' : fremove c cs
-  fselect [] = pure Nothing
-  fselect xs = pure $ Just $ head xs
+instance Frontier FRecBT where
+  fadd c (FRecBT cs) = FRecBT $ c : cs
+  fremove c (FRecBT cs) = FRecBT $ filter (/=c) cs
+  fselect (FRecBT []) = pure Nothing
+  fselect (FRecBT cs) = pure $ Just $ head cs
+
+instance Frontier FPrim where
+  fadd c (FPrim cs) = FPrim $ c : cs
+  fremove c (FPrim cs) = FPrim $ filter (/=c) cs
+  fselect (FPrim []) = pure Nothing
+  fselect (FPrim cs) = do
+    cs' <- shuffleM cs
+    pure $ Just $ head cs'
 
 randomElt :: [a] -> IO (Maybe a)
 randomElt [] = pure Nothing
@@ -64,7 +66,8 @@ mazify grid front = do
         (n:_) -> mazify (carve grid x n) $ fadd n front
 
 mazeGrid :: MazeAlgo -> Coord -> Coord -> IO Grid
-mazeGrid Backtrack = (mazeGrid'::[Coord]->Coord->Coord->IO Grid) []
+mazeGrid MazeRecBT = mazeGrid' $ FRecBT []
+mazeGrid MazePrim = mazeGrid' $ FPrim []
 
 mazeGrid' :: (Frontier a) => a -> Coord -> Coord -> IO Grid
 mazeGrid' front gmin gmax = do

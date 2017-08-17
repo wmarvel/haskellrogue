@@ -82,7 +82,7 @@ copyFromGrid level grid = pure $ foldl copyCell level $ levelCoords level
 
 mazifyLevel :: Level -> IO Level
 mazifyLevel level = do
-  grid <- mazeGrid Backtrack gmin gmax
+  grid <- mazeGrid MazePrim gmin gmax
   copyFromGrid level grid
   where
     toGrid (x, y) = (quot x 2, quot y 2)
