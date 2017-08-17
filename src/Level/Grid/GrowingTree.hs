@@ -1,9 +1,34 @@
+{-# LANGUAGE FlexibleInstances #-}
 module Level.Grid.GrowingTree where
 
 import Coord.Types
 import Level.Grid.Types
 import System.Random
 import System.Random.Shuffle
+
+data MazeAlgo
+  = Backtrack
+
+class (Eq a) => Frontier a where
+  fmake :: a -> a
+  fempty :: a
+  fadd :: Coord -> a -> a
+  fremove :: Coord -> a -> a
+  fselect :: a -> IO (Maybe Coord)
+
+instance Frontier [Coord] where
+  fmake x = x
+  fempty = []
+  fadd = (:)
+  fremove c l =
+    case l of
+      [] -> []
+      (c':cs) ->
+        if c == c'
+          then cs
+          else c' : fremove c cs
+  fselect [] = pure Nothing
+  fselect xs = pure $ Just $ head xs
 
 randomElt :: [a] -> IO (Maybe a)
 randomElt [] = pure Nothing
@@ -27,20 +52,26 @@ emptyNodeR g = randomElt $ filter predicate $ nodeCoords g
   where
     predicate x = (node x g) == GridEmpty
 
-mazify :: Grid -> [Coord] -> IO Grid
-mazify g [] = pure g
-mazify g (x:xs) = do
-  unvisited <- unvisitedNodesR x g
-  case unvisited of
-    [] -> mazify g xs
-    (n:_) -> mazify (carve g x n) (n : x : xs)
+mazify :: (Frontier a) => Grid -> a -> IO Grid
+mazify grid front = do
+  maybeCell <- fselect front
+  case maybeCell of
+    Nothing -> pure grid
+    Just x -> do
+      unvisited <- unvisitedNodesR x grid
+      case unvisited of
+        [] -> mazify grid $ fremove x front
+        (n:_) -> mazify (carve grid x n) $ fadd n front
 
-mazeGrid :: Coord -> Coord -> IO Grid
-mazeGrid gmin gmax = do
+mazeGrid :: MazeAlgo -> Coord -> Coord -> IO Grid
+mazeGrid Backtrack = (mazeGrid'::[Coord]->Coord->Coord->IO Grid) []
+
+mazeGrid' :: (Frontier a) => a -> Coord -> Coord -> IO Grid
+mazeGrid' front gmin gmax = do
   xMaybe <- emptyNodeR grid
   case xMaybe of
     Nothing -> pure grid
     Just x -> do
-      mazify (visit grid x) [x]
+      mazify (visit grid x) $ fadd x front
   where
     grid = emptyUnlinkedGrid gmin gmax

@@ -29,9 +29,10 @@ instance Show Cell where
 instance Show Grid where
   show g = foldl appendGridRow [] (cellRows g)
     where
-      appendGridRow s y = s ++ (foldr showGridRow "\n" $ cellRowCoords g y)
-      showGridRow c s' = (show $ cell c g) ++ s'
+      appendGridRow s y = s ++ (foldr buildRow "\n" $ cellRowCoords g y)
+      buildRow c s' = (show $ cell c g) ++ s'
 
+-- Find a cell in the grid. The cell may be an edge or a vertex.
 cell :: Coord -> Grid -> Cell
 cell c g = M.findWithDefault GridEmpty c $ gCells g
 
@@ -46,7 +47,7 @@ colCells x g =
   case ((gridToCell $gMin g), (gridToCell $ gMax g)) of
     ((_, y), (_, y')) -> [(2 * x, y'') | y'' <- [y .. y']]
 
--- Is a coordinate in cell space a node coordinate?
+-- Is a coordinate in cell space a node (vertex) coordinate?
 isNodeCoord :: Coord -> Bool
 isNodeCoord (x, y) = (even x) && (even y)
 
