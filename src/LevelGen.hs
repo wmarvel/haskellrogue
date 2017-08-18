@@ -97,6 +97,9 @@ randomLevel level = do
   connected <- reconnectLevel defaultContext placed
   placeStairs $ fillDeadEnds connected
 
+expandRoom :: Room -> Room
+expandRoom (Room (x, y) w h) = Room (x - 1, y - 1) (w+1) (h+1)
+
 roomsCollide :: Room -> Room -> Bool
 roomsCollide (Room (x, y) width height) (Room (x', y') width' height') =
   x < x' + width' && x + width > x' && y < y' + height' && y + height > y'
@@ -112,7 +115,7 @@ generateRooms ctx coord = foldl passCollision (pure []) [0 .. cRooms ctx]
     passCollision iorooms _ = do
       rooms <- iorooms
       room <- randRoom ctx coord
-      if anyRoomsCollide room rooms
+      if anyRoomsCollide (expandRoom room) (map expandRoom rooms)
         then iorooms
         else pure $ room : rooms
 
