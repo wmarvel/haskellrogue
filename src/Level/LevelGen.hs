@@ -103,8 +103,8 @@ randomGrid gmin gmax cnt = do
   rooms <- generateRooms gmin gmax grid cnt
   maze <- mazify MazePrim $ placeRooms grid $ rooms
   linked <- linkGrid maze rooms
-  pure $ linked
-  -- pure $ fillDeadEnds linked
+  --pure $ linked
+  pure $ fillDeadEnds linked
   where
     grid = emptyUnlinkedGrid gmin gmax
 
@@ -184,7 +184,7 @@ fillDeadEnds grid =
     fillPass ends' = foldl fillEnd grid ends'
     fillEnd g c = case linkedNeighbors c g of
       [] -> setNode GridEdgeWall g c
-      (c':_) -> fillEnd (unlink g c c') c
+      (c':_) -> fillEnd (unlink g c' c) c
 
 deadEnds :: Grid -> [Coord]
 deadEnds g = foldl buildList [] (nodeCoords g)
@@ -194,7 +194,7 @@ deadEnds g = foldl buildList [] (nodeCoords g)
       then c : l
       else l
     linkCount g'' c'' = length $ linkedNeighbors c'' g''
-    isDeadEnd g' c' = linkCount g' c' <= 1
+    isDeadEnd g' c' = (node c' g' == GridFloor) && (linkCount g' c' <= 1)
 
 -- copy a grid into a level
 copyFromGrid :: Level -> Grid -> IO Level
@@ -210,8 +210,23 @@ copyFromGrid level grid = pure $ foldl copyCell level $ levelCoords level
 randomLevel :: Level -> IO Level
 randomLevel lvl = do
   grid <- randomGrid gmin gmax 25
-  copyFromGrid lvl grid
+  rlvl <- copyFromGrid lvl grid
+  placeStairs rlvl
   where
     toGrid (x, y) = (quot x 2, quot y 2)
     gmin = toGrid $ lMin lvl
     gmax = toGrid $ lMax lvl
+
+placeStairs :: Level -> IO Level
+placeStairs level = do
+  level' <- placeUp level
+  down <- randomSpawn level
+  putStair down (St Down) level'
+  where
+    putStair coord stype lvl = pure $ updateTile coord stype lvl
+    placeUp lvl =
+      if lDepth lvl > 0
+        then do
+          up <- randomSpawn lvl
+          putStair up (St Up) lvl
+        else pure lvl

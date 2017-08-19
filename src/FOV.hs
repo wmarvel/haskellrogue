@@ -43,7 +43,7 @@ fov off rays lvl = foldl maybeAdd [] rays
   where
     maybeAdd result [] = result
     maybeAdd result (x:xs) =
-      if isWall coord lvl
+      if isWall coord lvl || isClosedDoor coord lvl
         then result'
         else maybeAdd result' xs
       where

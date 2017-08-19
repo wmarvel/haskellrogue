@@ -9,7 +9,7 @@ data Cell
   = GridEmpty -- Nothing done - default value
   | GridFloor -- vertex in-graph or presence of edge
   | GridEdgeWall -- Absence of an edge
-  | GridEdgeDoor -- Absence of an edge (special)
+  | GridEdgeDoor -- Presence of an edge (special)
   | GridWallHard -- vertex or edge unreachable
   deriving (Eq)
 
