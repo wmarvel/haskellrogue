@@ -11,9 +11,14 @@ data Room = Room
   { rPos :: Coord
   , rWidth :: Int
   , rHeight :: Int
-  }
+  } deriving Show
 
 -- Some useful random functions.
+randElt :: [a] -> IO a
+randElt xs = do
+  index <- randInt 0 (length xs - 1)
+  pure $ xs !! index
+  
 randInt :: Int -> Int -> IO Int
 randInt rMin rMax = getStdRandom $ randomR (rMin, rMax)
 
@@ -91,25 +96,50 @@ generateRooms cmin cmax grid cnt = foldl passCollision (pure []) [0 .. cnt]
 placeRooms :: Grid -> [Room] -> Grid
 placeRooms grid rooms = foldl placeRoom grid rooms
 
--- FIXME : need all the floodfills to start within the rooms
-unlinkedRoomMaze :: Coord -> Coord -> Int -> IO Grid
-unlinkedRoomMaze gmin gmax cnt = do
+-- FIXME : Relink the rooms individually - then floodfill to ensure
+-- full connectivity.
+linkedRoomMaze :: Coord -> Coord -> Int -> IO Grid
+linkedRoomMaze gmin gmax cnt = do
   rooms <- generateRooms gmin gmax grid cnt
-  mazify MazePrim $ placeRooms grid $ rooms
+  maze <- mazify MazePrim $ placeRooms grid $ rooms
+  linkGrid maze rooms
   where
     grid = emptyUnlinkedGrid gmin gmax
 
-relinkGrid :: Grid -> IO Grid
-relinkGrid grid = relinkGrid' grid $ S.fromList $ nodeCoords grid
+linkGrid :: Grid -> [Room] -> IO Grid
+linkGrid grid [] = linkGrid' grid $ S.fromList $ nodeCoords grid
+linkGrid grid (rm:rms) = do
+  putStrLn $ "Linking room " ++ show rm
+  newGrid <- linkRoom grid rm
+  linkGrid newGrid rms
 
-relinkGrid' :: Grid -> CoordSet -> IO Grid
-relinkGrid' grid nodes = do
+linkRoom :: Grid -> Room -> IO Grid
+linkRoom grid room = do
+  recur <- randBool 0.5
+  newGrid <- randomLink (roomEdge room) grid
+  if recur
+    then linkRoom newGrid room
+    else pure newGrid
+  
+roomEdge :: Room -> CoordSet
+roomEdge (Room (x, y) w h) = foldl (flip S.insert) S.empty coords
+  where
+    (x', y') = (x, y) |+| (w, h)
+    coords =
+      [ (x'', y'')
+      | x'' <- [x .. x']
+      , y'' <- [y .. y']
+      , x'' == x || x'' == x' || y'' == y || y'' == y'
+      ]
+
+linkGrid' :: Grid -> CoordSet -> IO Grid
+linkGrid' grid nodes = do
   linkedNodes <- reachableNodes grid
   if linkedNodes == nodes 
   then pure grid
   else do
-    newGrid <- randomRelink linkedNodes grid
-    relinkGrid' newGrid nodes
+    newGrid <- randomLink linkedNodes grid
+    linkGrid' newGrid nodes
 
 reachableNodes :: Grid -> IO CoordSet
 reachableNodes grid = do
@@ -129,22 +159,23 @@ linkablePairs :: CoordSet -> Grid -> [(Coord, [Coord])]
 linkablePairs cs grid = foldl addLinkPair [] cs
   where
     addLinkPair xs x =
-      case filter (flip S.member cs) $ unlinkedNeighbors x grid of
+      case filter predicate $ unlinkedNeighbors x grid of
         [] -> xs
         cs' -> (x, cs') : xs
+    predicate c = not $ S.member c cs
 
-testIt :: IO [(Coord, [Coord])]
-testIt = do
-  grid <- unlinkedRoomMaze (0, 0) (30, 15) 5
-  reachables <- reachableNodes grid
-  pure $ linkablePairs reachables grid
-  
-
-randomRelink :: CoordSet -> Grid -> IO Grid
-randomRelink reachables grid =
+randomLink :: CoordSet -> Grid -> IO Grid
+randomLink reachables grid =
   case linkablePairs reachables grid of
-    [] -> pure grid
-    xs -> undefined
+    [] -> do
+      putStrLn $ show reachables
+      putStrLn $ "No linkable pairs??"
+      pure grid
+    xs -> do
+      putStrLn $ "xs are : " ++ show xs
+      (x, xs') <- randElt xs
+      x' <- randElt xs'
+      pure $ link' grid x x'
 
 
     

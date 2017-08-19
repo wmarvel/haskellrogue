@@ -1,26 +1,18 @@
 For level generation:
 
-Two pieces - First generate a fully connected level with rooms, then remove most
-dead ends.
+Generate a fully connected maze level with rooms:
+1) Create a grid and place the floor area of the rooms 
+2) Start a maze generator in the grid and repeat until there are no nodes
+   that are not either part of a room or part of the maze. The maze generation
+   algorithm will naturally leave walls around the room floors.
+3) Connect the rooms to the maze. This may or may not fully connect the level
+4) Pick any starting node and get the list of nodes that are reachable from
+   that node.
+5) If all nodes are reachable, this portion of level generation is complete,
+   otherwise, connect a node that is adjacent to an unconnected node and loop
+   back to step 4.
 
-Generate a fully connected level with rooms:
-1) Generate a perfect maze the size of the level -- code in place
-2) Randomly place rooms into the level -- code in place
-   - This will disconnect pieces of the perfect maze.
-4) Pick any starting floor tile
-5) Generate a floodfill from that floor tile and mark floor and door tiles as
-   being in our region.
-6) If there are no floor tiles left that are *not* in the region, we are done
-   with this part of level generation.
-7) Mark Wall tiles that meet the following criteria as replacable:
-   - Have two or more floor tiles adjacent
-   - Have exactly one of those tiles adjacent to the flooded region
-   - are not on the edge of the world
-   - Can this be done while flooding? probably.
-8) Replace at least one Wall tile that is marked as replacable with floor or
-a door, then go back to step 5.
-
-Remove dead ends (code in place):
+Remove dead ends:
 1) Get dead end tiles to be removed. 
    - A dead end is a floor tile with three adjacent Wall tiles
    - To not remove them all we just randomly filter them with some probability
@@ -30,5 +22,5 @@ Remove dead ends (code in place):
 4) All deadends have been filled. 
 
 This should leave us with a level that has all rooms connected, and if we select
-more than one Wall to remove during the removing-walls loop, we will no longer
-be perfectly connected but have loops in the paths.
+more than one place to connect when reconnecting either rooms or the full
+maze, there will naturally be loops in the level.
