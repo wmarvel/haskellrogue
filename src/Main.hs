@@ -10,14 +10,15 @@ import Types
 import FOV
 
 levelSize :: Coord
-levelSize = (80, 25)
+levelSize = (160, 48)
 
 cleanLevel :: Level
 cleanLevel = levelAllFloor levelSize
 
 main :: IO ()
 main = do
-  rlevel <- randomLevel cleanLevel
+  rrooms <- randInt 50 100
+  rlevel <- randomLevel cleanLevel rrooms
   rspawn <- randomSpawn rlevel
   initDisplay
   startGame rlevel rspawn
@@ -74,7 +75,8 @@ maybeTakeStairs :: Stairs -> World -> IO World
 maybeTakeStairs stairs world =
   if isStairs stairs coord level
     then do
-      randLevel <- randomLevel $ cleanLevel { lDepth = depth + delta }
+      rrooms <- randInt 50 100
+      randLevel <- randomLevel (cleanLevel { lDepth = depth + delta }) rrooms
       rspawn <- randomSpawn randLevel
       clearScreen -- Need refactoring
       pure $ world { wHero = spawnHero rspawn hero, wLevel = randLevel }

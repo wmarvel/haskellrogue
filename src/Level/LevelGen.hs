@@ -198,18 +198,25 @@ deadEnds g = foldl buildList [] (nodeCoords g)
 
 -- copy a grid into a level
 copyFromGrid :: Level -> Grid -> IO Level
-copyFromGrid level grid = pure $ foldl copyCell level $ levelCoords level
+copyFromGrid level grid = foldl copyCell (pure level) $ levelCoords level
   where
-    copyCell lvl x = updateTile x (cellToTile (cell x grid)) lvl
-    cellToTile GridEmpty = Wall
-    cellToTile GridFloor = Floor
-    cellToTile GridEdgeWall = Wall
-    cellToTile GridWallHard = Wall
-    cellToTile GridEdgeDoor = Dr Closed
+    copyCell iolvl x = do
+      lvl <- iolvl
+      tile <- cellToTile $ cell x grid
+      pure $ updateTile x tile lvl
+    cellToTile GridEmpty = pure Wall
+    cellToTile GridFloor = pure Floor
+    cellToTile GridEdgeWall = pure Wall
+    cellToTile GridWallHard = pure Wall
+    cellToTile GridEdgeDoor = do
+      open <- randBool 0.25
+      if open
+        then pure $ Dr Opened
+        else pure $ Dr Closed
 
-randomLevel :: Level -> IO Level
-randomLevel lvl = do
-  grid <- randomGrid gmin gmax 25
+randomLevel :: Level -> Int -> IO Level
+randomLevel lvl cnt = do
+  grid <- randomGrid gmin gmax cnt
   rlvl <- copyFromGrid lvl grid
   placeStairs rlvl
   where
