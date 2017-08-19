@@ -55,12 +55,6 @@ data Level = Level
   , lVisible :: CoordSet
   }
 
-data Screen = Screen
-  { sOffset :: Coord
-  , sSize :: (Int, Int)
-  , sUpdated :: Bool
-  }
-
 data World = World
   { wHero :: Hero
   , wLevel :: Level

@@ -38,11 +38,6 @@ randomElt xs = do
   i <- getStdRandom $ randomR (0, length xs - 1)
   pure $ Just $ xs !! i
 
-adjacentNodesOf :: (Cell -> Bool) -> Coord -> Grid -> [Coord]
-adjacentNodesOf f x g = filter predicate (adjacentNodes x)
-  where
-    predicate x' = isNodeInBounds g x' && (f $ node x' g)
-
 unvisitedNodes :: Coord -> Grid -> [Coord]
 unvisitedNodes x g = adjacentNodesOf (== GridEmpty) x g
 
@@ -54,27 +49,33 @@ emptyNodeR g = randomElt $ filter predicate $ nodeCoords g
   where
     predicate x = (node x g) == GridEmpty
 
-mazify :: (Frontier a) => Grid -> a -> IO Grid
-mazify grid front = do
+mazify' :: (Frontier a) => Grid -> a -> IO Grid
+mazify' grid front = do
   maybeCell <- fselect front
   case maybeCell of
     Nothing -> pure grid
     Just x -> do
       unvisited <- unvisitedNodesR x grid
       case unvisited of
-        [] -> mazify grid $ fremove x front
-        (n:_) -> mazify (carve grid x n) $ fadd n front
+        [] -> mazify' grid $ fremove x front
+        (n:_) -> mazify' (carve grid x n) $ fadd n front
+
+mazify :: MazeAlgo -> Grid -> IO Grid
+mazify MazeRecBT grid = mazeGrid' (FRecBT []) grid
+mazify MazePrim grid = mazeGrid' (FPrim []) grid
 
 mazeGrid :: MazeAlgo -> Coord -> Coord -> IO Grid
-mazeGrid MazeRecBT = mazeGrid' $ FRecBT []
-mazeGrid MazePrim = mazeGrid' $ FPrim []
+mazeGrid MazeRecBT = makeMazeGrid $ FRecBT []
+mazeGrid MazePrim = makeMazeGrid $ FPrim []
 
-mazeGrid' :: (Frontier a) => a -> Coord -> Coord -> IO Grid
-mazeGrid' front gmin gmax = do
+mazeGrid' :: (Frontier a) => a -> Grid -> IO Grid
+mazeGrid' front grid = do
   xMaybe <- emptyNodeR grid
   case xMaybe of
     Nothing -> pure grid
     Just x -> do
-      mazify (visit grid x) $ fadd x front
-  where
-    grid = emptyUnlinkedGrid gmin gmax
+      newGrid <- mazify' (visit grid x) (fadd x front)
+      mazeGrid' front newGrid
+
+makeMazeGrid :: (Frontier a) => a -> Coord -> Coord -> IO Grid
+makeMazeGrid front gmin gmax = mazeGrid' front $ emptyUnlinkedGrid gmin gmax

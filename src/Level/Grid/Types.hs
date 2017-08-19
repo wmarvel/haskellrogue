@@ -175,6 +175,16 @@ crossCoords (x, y) = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
 adjacentNodes :: Coord -> [Coord]
 adjacentNodes = crossCoords
 
+adjacentNodesOf :: (Cell -> Bool) -> Coord -> Grid -> [Coord]
+adjacentNodesOf f x g = filter predicate (adjacentNodes x)
+  where
+    predicate x' = isNodeInBounds g x' && (f $ node x' g)
+
+unlinkedNeighbors :: Coord -> Grid -> [Coord]
+unlinkedNeighbors x g = filter predicate (adjacentNodes x)
+  where
+    predicate x' = isNodeInBounds g x' && not (isLinked x x' g)
+
 -- Is inbounds in grid space
 isNodeInBounds :: Grid -> Coord -> Bool
 isNodeInBounds (Grid (xMin, yMin) (xMax, yMax) _) (x, y) =
@@ -190,3 +200,11 @@ isLinkInBounds (Grid gmin gmax _) (x, y) =
 -- links in cell space of vertex in grid space
 links :: Coord -> [Coord]
 links = crossCoords . gridToCell
+
+-- are two coords in grid space linked?
+isLinked :: Coord -> Coord -> Grid -> Bool
+isLinked c1 c2 grid =
+  if elem c2 $ adjacentNodes c1
+  then cval == GridEdgeDoor || cval == GridFloor
+  else False
+  where cval = cell (edgeCoord c1 c2) grid

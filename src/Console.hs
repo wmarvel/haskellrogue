@@ -6,6 +6,12 @@ import Level
 import System.Console.ANSI
 import Types
 
+data Screen = Screen
+  { sOffset :: Coord
+  , sSize :: (Int, Int)
+  , sUpdated :: Bool
+  }
+
 data BoldInfo a = Bolded a | Normal a
 
 class ConsoleRenderable a where
@@ -99,6 +105,7 @@ renderWorld :: Screen -> World -> IO Screen
 renderWorld screen world = do
   renderCoords uScreen world $ renderableCoords uScreen world
   renderHero uScreen world
+  renderStatus world
   pure $ uScreen
   where
     uScreen =
@@ -106,6 +113,15 @@ renderWorld screen world = do
         then screen {sUpdated = False}
         else updateScreen screen hero
     hero = wHero world
+
+renderStatus :: World -> IO ()
+renderStatus world = do
+  setCursorPosition 20 0
+  setSGR [SetConsoleIntensity BoldIntensity, SetColor Foreground Vivid White]
+  putStr "Depth: "
+  putStr $ show $ depth * 50 + 50
+  putStr "'"
+  where depth = lDepth $ wLevel world
 
 screenCoords :: Screen -> [Coord]
 screenCoords screen = [(x, y) | x <- [0 .. xMax], y <- [0 .. yMax]]
@@ -156,7 +172,7 @@ updateScreen _ = initialScreen
 initialScreen :: Hero -> Screen
 initialScreen hero = screen {sOffset = newOffset, sUpdated = True}
   where
-    screen = Screen (0,0) (79,24) True
+    screen = Screen (0,0) (79,19) True
     newOffset = (halfWidth, halfHeight) |-| hCurPos hero
     (sWidth, sHeight) = sSize screen
     halfWidth = quot sWidth 2
