@@ -3,7 +3,7 @@ module Main where
 import Console
 import Coord.Types
 import Level
-import LevelGen
+import Level.LevelGen
 import System.Console.ANSI
 import System.IO
 import Types

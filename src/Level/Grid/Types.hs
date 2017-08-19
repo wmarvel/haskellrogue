@@ -167,6 +167,9 @@ carve = fCarve link
 carve' :: Grid -> Coord -> Coord -> Grid
 carve' = fCarve link'
 
+uncarve :: Grid -> Coord -> Coord -> Grid
+uncarve g c1 c2 = unlink (setNode GridEdgeWall g c2) c1 c2
+
 -- Cross coordinates in unspecified space
 crossCoords :: Coord -> [Coord]
 crossCoords (x, y) = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
@@ -184,6 +187,11 @@ unlinkedNeighbors :: Coord -> Grid -> [Coord]
 unlinkedNeighbors x g = filter predicate (adjacentNodes x)
   where
     predicate x' = isNodeInBounds g x' && not (isLinked x x' g)
+
+linkedNeighbors :: Coord -> Grid -> [Coord]
+linkedNeighbors x g = filter predicate (adjacentNodes x)
+  where
+    predicate x' = isNodeInBounds g x' && isLinked x x' g
 
 -- Is inbounds in grid space
 isNodeInBounds :: Grid -> Coord -> Bool
