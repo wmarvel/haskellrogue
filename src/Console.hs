@@ -52,7 +52,7 @@ instance ConsoleRenderable a => ConsoleRenderable (BoldInfo a) where
     '.' -> ' '
     c -> c
   toRenderChar (Bolded x) = toRenderChar x
-  toRenderSGR bi = (toIntensity bi) : map toVivid' (toRenderSGR $ extract bi)
+  toRenderSGR bi = toIntensity bi : map toVivid' (toRenderSGR $ extract bi)
     where
       toVivid' = toVivid bi
 
@@ -65,8 +65,8 @@ toVivid (Bolded _) (SetColor fgbg Dull color) = SetColor fgbg Vivid color
 toVivid _ x = x
 
 toIntensity :: BoldInfo a -> SGR
-toIntensity (Bolded _) = (SetConsoleIntensity BoldIntensity)
-toIntensity _ = (SetConsoleIntensity NormalIntensity)
+toIntensity (Bolded _) = SetConsoleIntensity BoldIntensity
+toIntensity _ = SetConsoleIntensity NormalIntensity
 
 render :: (ConsoleRenderable a) => Screen -> Coord -> a -> IO ()
 render screen coord x = do
@@ -78,8 +78,7 @@ coordToTile :: World -> Coord -> Tile
 coordToTile (World _ level) coord = lookupTile coord level
 
 renderCoord :: Screen -> World -> Coord -> IO ()
-renderCoord screen world coord = do
-  render screen coord maybeBold
+renderCoord screen world coord = render screen coord maybeBold
   where
     tile = coordToTile world coord
     maybeBold =
@@ -106,7 +105,7 @@ renderWorld screen world = do
   renderCoords uScreen world $ renderableCoords uScreen world
   renderHero uScreen world
   renderStatus world
-  pure $ uScreen
+  pure uScreen
   where
     uScreen =
       if inScreenBounds screen world

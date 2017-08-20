@@ -28,12 +28,12 @@ randMapped :: (Int -> Int) -> (Int -> Int) -> Int -> IO Int
 randMapped fRes fLim limit = fmap fRes $ randInt 0 $ fLim limit
 
 randOdd :: Int -> Int -> IO Int
-randOdd x x' = fmap (+ x) $ randOdd' (x' - x)
+randOdd x x' = (+ x) <$> randOdd' (x' - x)
   where
-    randOdd' = randMapped (.|. 1) (.|. 1) . (subtract 1)
+    randOdd' = randMapped (.|. 1) (.|. 1) . subtract 1
 
 randEven :: Int -> Int -> IO Int
-randEven x x' = fmap (+ x) $ randEven' (x' - x)
+randEven x x' = (+ x) <$> randEven' (x' - x)
   where
     randEven' = randMapped (.&. (maxBound - 1)) (.|. 1)
 
@@ -52,7 +52,7 @@ randRoom (dMin, dMax) (xMin, yMin) (xMax, yMax) = do
   hRand <- randEven dMin (quot dMax 2)
   randCol <- randInt xMin $ xMax - wRand
   randRow <- randInt yMin $ yMax - hRand
-  pure $ Room {rPos = (randCol, randRow), rWidth = wRand, rHeight = hRand}
+  pure Room {rPos = (randCol, randRow), rWidth = wRand, rHeight = hRand}
 
 roomWithinGrid :: Grid -> Room -> Bool
 roomWithinGrid g r =
@@ -66,7 +66,7 @@ roomWithinGrid g r =
 placeRoom :: Grid -> Room -> Grid
 placeRoom g r = foldl setCell' g $ allCellCoords rg
   where
-    setCell' = (setCell GridFloor)
+    setCell' = setCell GridFloor
     rg = emptyLinkedGrid pos (pos |+| dim)
     pos = rPos r
     dim = (rWidth r, rHeight r)
@@ -76,7 +76,7 @@ roomsCollide (Room (x, y) width height) (Room (x', y') width' height') =
   x <= x' + width' && x + width >= x' && y <= y' + height' && y + height >= y'
 
 anyRoomsCollide :: Room -> [Room] -> Bool
-anyRoomsCollide room rooms = foldl roomsCollide' False rooms
+anyRoomsCollide room = foldl roomsCollide' False
   where
     roomsCollide' value room' = value || roomsCollide room room'
 
@@ -93,12 +93,12 @@ generateRooms cmin cmax grid cnt = foldl passCollision (pure []) [0 .. cnt]
       roomWithinGrid grid room' && not (anyRoomsCollide room' rooms')
 
 placeRooms :: Grid -> [Room] -> Grid
-placeRooms grid rooms = foldl placeRoom grid rooms
+placeRooms = foldl placeRoom
 
 randomGrid :: Coord -> Coord -> Int -> IO Grid
 randomGrid gmin gmax cnt = do
   rooms <- generateRooms gmin gmax grid cnt
-  maze <- mazify MazePrim $ placeRooms grid $ rooms
+  maze <- mazify MazePrim $ placeRooms grid rooms
   linked <- linkGrid maze rooms
   pure $ fillDeadEnds linked
   where
@@ -145,12 +145,11 @@ reachableNodes grid = do
   where
     reachableNodes' coord found = foldl maybeAdd found $ adjacentNodes coord
       where
-        maybeAdd found' coord' =
-          if S.member coord' found'
-            then found'
-            else if isLinked coord coord' grid
-                   then reachableNodes' coord' $ S.insert coord' found'
-                   else found'
+        maybeAdd found' coord'
+          | S.member coord' found' = found'
+          | isLinked coord coord' grid =
+            reachableNodes' coord' $ S.insert coord' found'
+          | otherwise = found'
 
 linkablePairs :: CoordSet -> Grid -> [(Coord, [Coord])]
 linkablePairs cs grid = foldl addLinkPair [] cs
@@ -164,8 +163,7 @@ linkablePairs cs grid = foldl addLinkPair [] cs
 randomLink :: CoordSet -> Grid -> IO Grid
 randomLink reachables grid =
   case linkablePairs reachables grid of
-    [] -> do
-      pure grid
+    [] -> pure grid
     xs -> do
       (x, xs') <- randElt xs
       x' <- randElt xs'
@@ -177,7 +175,7 @@ fillDeadEnds grid =
     [] -> grid
     ends -> fillDeadEnds $ fillPass ends
   where
-    fillPass ends' = foldl fillEnd grid ends'
+    fillPass = foldl fillEnd grid
     fillEnd g c = case linkedNeighbors c g of
       [] -> setNode GridEdgeWall g c
       (c':_) -> fillEnd (unlink g c' c) c

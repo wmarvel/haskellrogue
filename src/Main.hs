@@ -38,7 +38,7 @@ spawnHero :: Coord -> Hero -> Hero
 spawnHero coord hero = hero {hCurPos = coord, hOldPos = coord}
 
 startGame :: Level -> Coord -> IO ()
-startGame rlevel rspawn = gameLoop screen $ handleVisibles $ world
+startGame rlevel rspawn = gameLoop screen $ handleVisibles world
   where
     hero = spawnHero rspawn commoner
     world = makeWorld {wHero = hero, wLevel = rlevel}
@@ -52,7 +52,7 @@ gameLoop screen world = do
     Exit -> exitGame
     _ -> do
       newWorld <- updateWorld (unchangedWorld world) command
-      gameLoop newScreen $ handleVisibles $ newWorld
+      gameLoop newScreen $ handleVisibles newWorld
 
 instance CommandSource Hero where
   getCommand hero = do
@@ -129,10 +129,10 @@ handleVisibles world =
 opOn :: World -> Direction -> Level
 opOn world Stand = wLevel world
 opOn (World hero level) dir =
-  case (targetCoord hero dir) of
+  case targetCoord hero dir of
     target
-      | isOpenDoor target level == True -> updateTile target (Dr Closed) level
-      | isClosedDoor target level == True -> updateTile target (Dr Opened) level
+      | isOpenDoor target level -> updateTile target (Dr Closed) level
+      | isClosedDoor target level -> updateTile target (Dr Opened) level
     _ -> level
 
 exitGame :: IO ()

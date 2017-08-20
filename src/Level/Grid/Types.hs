@@ -29,8 +29,8 @@ instance Show Cell where
 instance Show Grid where
   show g = foldl appendGridRow [] (cellRows g)
     where
-      appendGridRow s y = s ++ (foldr buildRow "\n" $ cellRowCoords g y)
-      buildRow c s' = (show $ cell c g) ++ s'
+      appendGridRow s y = s ++ foldr buildRow "\n" (cellRowCoords g y)
+      buildRow c s' = show (cell c g) ++ s'
 
 -- Find a cell in the grid. The cell may be an edge or a vertex.
 cell :: Coord -> Grid -> Cell
@@ -39,21 +39,21 @@ cell c g = M.findWithDefault GridEmpty c $ gCells g
 -- Get coords in cell space of every cell in a row
 rowCells :: Int -> Grid -> [Coord]
 rowCells y g =
-  case ((gridToCell $gMin g), (gridToCell $ gMax g)) of
+  case (gridToCell $ gMin g, gridToCell $ gMax g) of
     ((x, _), (x', _)) -> [(x'', 2 * y) | x'' <- [x .. x']]
 
 colCells :: Int -> Grid -> [Coord]
 colCells x g =
-  case ((gridToCell $gMin g), (gridToCell $ gMax g)) of
+  case (gridToCell $gMin g, gridToCell $ gMax g) of
     ((_, y), (_, y')) -> [(2 * x, y'') | y'' <- [y .. y']]
 
 -- Is a coordinate in cell space a node (vertex) coordinate?
 isNodeCoord :: Coord -> Bool
-isNodeCoord (x, y) = (even x) && (even y)
+isNodeCoord (x, y) = even x && even y
 
 -- Is a coordinate in cell space a link (edge) coordinate?
 isLinkCoord :: Coord -> Bool
-isLinkCoord (x, y) = (odd x) || (odd y)
+isLinkCoord (x, y) = odd x || odd y
 
 cellRows :: Grid -> [Int]
 cellRows (Grid gmin gmax _) =
@@ -141,21 +141,21 @@ setAllLinks v g = setAllCells v (linkCellCoords g) g
 
 -- | link two cells in grid space. They must be adjacent
 link :: Grid -> Coord -> Coord -> Grid
-link g c1 c2 = setLink GridFloor g c1 c2
+link = setLink GridFloor
 
 link' :: Grid -> Coord -> Coord -> Grid
-link' g c1 c2 = setLink GridEdgeDoor g c1 c2
+link' = setLink GridEdgeDoor
 
 -- | unlink two cells in grid space. They must be adjacent
 unlink :: Grid -> Coord -> Coord -> Grid
-unlink g c1 c2 = setLink GridEdgeWall g c1 c2
+unlink = setLink GridEdgeWall
 
 unlink' :: Grid -> Coord -> Coord -> Grid
-unlink' g c1 c2 = setLink GridWallHard g c1 c2
+unlink' = setLink GridWallHard
 
 -- | Visit a cell
 visit :: Grid -> Coord -> Grid
-visit g c = setNode GridFloor g c
+visit = setNode GridFloor
 
 -- | Carve - cut an edge and a cell
 fCarve :: (Grid -> Coord -> Coord -> Grid) -> Grid -> Coord -> Coord -> Grid
@@ -181,7 +181,7 @@ adjacentNodes = crossCoords
 adjacentNodesOf :: (Cell -> Bool) -> Coord -> Grid -> [Coord]
 adjacentNodesOf f x g = filter predicate (adjacentNodes x)
   where
-    predicate x' = isNodeInBounds g x' && (f $ node x' g)
+    predicate x' = isNodeInBounds g x' && f (node x' g)
 
 unlinkedNeighbors :: Coord -> Grid -> [Coord]
 unlinkedNeighbors x g = filter predicate (adjacentNodes x)
@@ -212,7 +212,5 @@ links = crossCoords . gridToCell
 -- are two coords in grid space linked?
 isLinked :: Coord -> Coord -> Grid -> Bool
 isLinked c1 c2 grid =
-  if elem c2 $ adjacentNodes c1
-  then cval == GridEdgeDoor || cval == GridFloor
-  else False
+  elem c2 (adjacentNodes c1) && (cval == GridEdgeDoor || cval == GridFloor)
   where cval = cell (edgeCoord c1 c2) grid

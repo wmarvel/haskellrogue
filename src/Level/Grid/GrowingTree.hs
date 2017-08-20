@@ -6,11 +6,12 @@ import System.Random
 import System.Random.Shuffle
 
 -- Using FRecBT as the frontier results in a recursive backtracker
-data FRecBT = FRecBT [Coord]
+newtype FRecBT = FRecBT [Coord]
 
 -- Using FPrim as the frontier results in Prim's algorithm
-data FPrim = FPrim [Coord]
+newtype FPrim = FPrim [Coord]
 
+-- Type for supported algorithms
 data MazeAlgo = MazeRecBT | MazePrim
 
 class Frontier a where
@@ -39,7 +40,7 @@ randomElt xs = do
   pure $ Just $ xs !! i
 
 unvisitedNodes :: Coord -> Grid -> [Coord]
-unvisitedNodes x g = adjacentNodesOf (== GridEmpty) x g
+unvisitedNodes = adjacentNodesOf (== GridEmpty)
 
 unvisitedNodesR :: Coord -> Grid -> IO [Coord]
 unvisitedNodesR x g = shuffleM $ unvisitedNodes x g
@@ -47,7 +48,7 @@ unvisitedNodesR x g = shuffleM $ unvisitedNodes x g
 emptyNodeR :: Grid -> IO (Maybe Coord)
 emptyNodeR g = randomElt $ filter predicate $ nodeCoords g
   where
-    predicate x = (node x g) == GridEmpty
+    predicate x = node x g == GridEmpty
 
 mazify' :: (Frontier a) => Grid -> a -> IO Grid
 mazify' grid front = do

@@ -1,5 +1,6 @@
 module Level where
 
+import Data.Maybe (fromMaybe)
 import Coord.Types
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -11,18 +12,16 @@ sizedLevel bound = emptyLevel {lMax = bound}
 
 isAtCoord :: (a -> Bool) -> Bool -> Coord -> M.Map Coord a -> Bool
 isAtCoord f defval coord valuemap =
-  case fmap f $ M.lookup coord valuemap of
-    Nothing -> defval
-    Just value -> value
+  fromMaybe defval (f <$> M.lookup coord valuemap)
 
 isTile :: (Tile -> Bool) -> Bool -> Coord -> Level -> Bool
 isTile f defval coord level = isAtCoord f defval coord (lTiles level)
 
 isClosedDoor :: Coord -> Level -> Bool
-isClosedDoor = isTile (== (Dr Closed)) False
+isClosedDoor = isTile (== Dr Closed) False
 
 isOpenDoor :: Coord -> Level -> Bool
-isOpenDoor = isTile (== (Dr Opened)) False
+isOpenDoor = isTile (== Dr Opened) False
 
 isWall :: Coord -> Level -> Bool
 isWall = isTile (== Wall) True
@@ -31,7 +30,7 @@ isFloor :: Coord -> Level -> Bool
 isFloor = isTile (== Floor) False
 
 isStairs :: Stairs -> Coord -> Level -> Bool
-isStairs stairs = isTile (== (St stairs)) False
+isStairs stairs = isTile (== St stairs) False
 
 isOccupiable :: Coord -> Level -> Bool
 isOccupiable coord = not . isWall coord
