@@ -9,15 +9,26 @@ import System.IO
 import Types
 import FOV
 
+class CommandSource a where
+  getCommand :: a -> IO Command
+
 levelSize :: Coord
-levelSize = (160, 48)
+levelSize = (100, 50)
+
+-- minimum number of rooms to attempt to place
+minRooms :: Int
+minRooms = 100
+
+-- maximum number of rooms to attempt to place
+maxRooms :: Int
+maxRooms = 250
 
 cleanLevel :: Level
 cleanLevel = levelAllFloor levelSize
 
 main :: IO ()
 main = do
-  rrooms <- randInt 50 100
+  rrooms <- randInt minRooms maxRooms
   rlevel <- randomLevel cleanLevel rrooms
   rspawn <- randomSpawn rlevel
   initDisplay
@@ -36,26 +47,26 @@ startGame rlevel rspawn = gameLoop screen $ handleVisibles $ world
 gameLoop :: Screen -> World -> IO ()
 gameLoop screen world = do
   newScreen <- renderWorld screen world
-  command <- getCommand
+  command <- getCommand $ wHero world
   case command of
     Exit -> exitGame
     _ -> do
       newWorld <- updateWorld (unchangedWorld world) command
       gameLoop newScreen $ handleVisibles $ newWorld
 
-getCommand :: IO Command
-getCommand = do
-  char <- getChar
-  case char of
-    c
-      | c `elem` "wasdkulnjbhy" -> return $ Move $ getDirection c
-    'o' -> do
-      ochar <- getChar
-      pure $ Operate $ getDirection ochar
-    'q' -> pure Exit
-    '>' -> pure $ TakeStair Down
-    '<' -> pure $ TakeStair Up
-    _ -> getCommand
+instance CommandSource Hero where
+  getCommand hero = do
+    char <- getChar
+    case char of
+      c
+        | c `elem` "wasdkulnjbhy" -> return $ Move $ getDirection c
+      'o' -> do
+        ochar <- getChar
+        pure $ Operate $ getDirection ochar
+      'q' -> pure Exit
+      '>' -> pure $ TakeStair Down
+      '<' -> pure $ TakeStair Up
+      _ -> getCommand hero
 
 canOccupy :: Coord -> World -> Bool
 canOccupy coord world = not $ isWall coord level || isClosedDoor coord level
@@ -75,7 +86,7 @@ maybeTakeStairs :: Stairs -> World -> IO World
 maybeTakeStairs stairs world =
   if isStairs stairs coord level
     then do
-      rrooms <- randInt 50 100
+      rrooms <- randInt minRooms maxRooms
       randLevel <- randomLevel (cleanLevel { lDepth = depth + delta }) rrooms
       rspawn <- randomSpawn randLevel
       clearScreen -- Need refactoring

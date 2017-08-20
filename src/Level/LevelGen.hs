@@ -50,8 +50,8 @@ randRoom :: Coord -> Coord -> Coord -> IO Room
 randRoom (dMin, dMax) (xMin, yMin) (xMax, yMax) = do
   wRand <- randEven dMin dMax
   hRand <- randEven dMin (quot dMax 2)
-  randCol <- randOdd xMin $ xMax - wRand
-  randRow <- randOdd yMin $ yMax - hRand
+  randCol <- randInt xMin $ xMax - wRand
+  randRow <- randInt yMin $ yMax - hRand
   pure $ Room {rPos = (randCol, randRow), rWidth = wRand, rHeight = hRand}
 
 roomWithinGrid :: Grid -> Room -> Bool
@@ -71,17 +71,14 @@ placeRoom g r = foldl setCell' g $ allCellCoords rg
     pos = rPos r
     dim = (rWidth r, rHeight r)
 
-expandRoom :: Room -> Room
-expandRoom (Room (x, y) w h) = Room (x - 1, y - 1) (w + 1) (h + 1)
-
 roomsCollide :: Room -> Room -> Bool
 roomsCollide (Room (x, y) width height) (Room (x', y') width' height') =
-  x < x' + width' && x + width > x' && y < y' + height' && y + height > y'
+  x <= x' + width' && x + width >= x' && y <= y' + height' && y + height >= y'
 
 anyRoomsCollide :: Room -> [Room] -> Bool
 anyRoomsCollide room rooms = foldl roomsCollide' False rooms
   where
-    roomsCollide' value room' = value || roomsCollide (expandRoom room) (expandRoom room')
+    roomsCollide' value room' = value || roomsCollide room room'
 
 generateRooms :: Coord -> Coord -> Grid -> Int -> IO [Room]
 generateRooms cmin cmax grid cnt = foldl passCollision (pure []) [0 .. cnt]
@@ -103,7 +100,6 @@ randomGrid gmin gmax cnt = do
   rooms <- generateRooms gmin gmax grid cnt
   maze <- mazify MazePrim $ placeRooms grid $ rooms
   linked <- linkGrid maze rooms
-  --pure $ linked
   pure $ fillDeadEnds linked
   where
     grid = emptyUnlinkedGrid gmin gmax
@@ -209,7 +205,7 @@ copyFromGrid level grid = foldl copyCell (pure level) $ levelCoords level
     cellToTile GridEdgeWall = pure Wall
     cellToTile GridWallHard = pure Wall
     cellToTile GridEdgeDoor = do
-      open <- randBool 0.25
+      open <- randBool 0.40
       if open
         then pure $ Dr Opened
         else pure $ Dr Closed
