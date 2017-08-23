@@ -13,7 +13,7 @@ data Room = Room
   { rPos :: Coord
   , rWidth :: Int
   , rHeight :: Int
-  } deriving Show
+  }
 
 -- Some useful random functions.
 randElt :: [a] -> IO a
@@ -98,7 +98,7 @@ placeRooms = foldl placeRoom
 randomGrid :: Coord -> Coord -> Int -> IO Grid
 randomGrid gmin gmax cnt = do
   rooms <- generateRooms gmin gmax grid cnt
-  maze <- mazify MazePrim $ placeRooms grid rooms
+  maze <- mazify MazeOldest $ placeRooms grid rooms
   linked <- linkGrid maze rooms
   pure $ fillDeadEnds linked
   where

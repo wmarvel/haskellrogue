@@ -11,8 +11,10 @@ newtype FRecBT = FRecBT [Coord]
 -- Using FPrim as the frontier results in Prim's algorithm
 newtype FPrim = FPrim [Coord]
 
+data FOldest = FOldest [Coord] [Coord]
+
 -- Type for supported algorithms
-data MazeAlgo = MazeRecBT | MazePrim
+data MazeAlgo = MazeRecBT | MazePrim | MazeOldest
 
 class Frontier a where
   fadd :: Coord -> a -> a
@@ -33,6 +35,16 @@ instance Frontier FPrim where
     cs' <- shuffleM cs
     pure $ Just $ head cs'
 
+instance Frontier FOldest where
+  fadd c (FOldest [] _) = FOldest [c] []
+  fadd c (FOldest xs ys) = FOldest xs (c:ys)
+  fremove _ (FOldest [] _) = FOldest [] []
+  fremove _ (FOldest (_:[]) ys) = FOldest (reverse ys) []
+  fremove _ (FOldest (_:xs) ys) = FOldest xs ys
+  fselect (FOldest [] _) = pure Nothing
+  fselect (FOldest (x:_) _) = pure $ Just x
+  
+    
 randomElt :: [a] -> IO (Maybe a)
 randomElt [] = pure Nothing
 randomElt xs = do
@@ -64,10 +76,12 @@ mazify' grid front = do
 mazify :: MazeAlgo -> Grid -> IO Grid
 mazify MazeRecBT grid = mazeGrid' (FRecBT []) grid
 mazify MazePrim grid = mazeGrid' (FPrim []) grid
+mazify MazeOldest grid = mazeGrid' (FOldest [] []) grid
 
 mazeGrid :: MazeAlgo -> Coord -> Coord -> IO Grid
 mazeGrid MazeRecBT = makeMazeGrid $ FRecBT []
 mazeGrid MazePrim = makeMazeGrid $ FPrim []
+mazeGrid MazeOldest = makeMazeGrid $ FOldest [] []
 
 mazeGrid' :: (Frontier a) => a -> Grid -> IO Grid
 mazeGrid' front grid = do
