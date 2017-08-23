@@ -39,7 +39,7 @@ instance Frontier FOldest where
   fadd c (FOldest [] _) = FOldest [c] []
   fadd c (FOldest xs ys) = FOldest xs (c:ys)
   fremove _ (FOldest [] _) = FOldest [] []
-  fremove _ (FOldest (_:[]) ys) = FOldest (reverse ys) []
+  fremove _ (FOldest [_] ys) = FOldest (reverse ys) []
   fremove _ (FOldest (_:xs) ys) = FOldest xs ys
   fselect (FOldest [] _) = pure Nothing
   fselect (FOldest (x:_) _) = pure $ Just x
