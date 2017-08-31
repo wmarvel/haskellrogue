@@ -10,7 +10,6 @@ data Cell
   | GridFloor -- vertex in-graph or presence of edge
   | GridEdgeWall -- Absence of an edge
   | GridEdgeDoor -- Presence of an edge (special)
-  | GridWallHard -- vertex or edge unreachable
   deriving (Eq)
 
 data Grid = Grid
@@ -22,7 +21,6 @@ data Grid = Grid
 instance Show Cell where
   show GridEmpty = "?"
   show GridEdgeWall = "#"
-  show GridWallHard = "%"
   show GridEdgeDoor = "+"
   show GridFloor = "."
 
@@ -108,14 +106,6 @@ emptyLinkedGrid gmin gmax = setAllLinks GridFloor $ emptyGrid gmin gmax
 emptyUnlinkedGrid :: Coord -> Coord -> Grid
 emptyUnlinkedGrid gmin gmax = setAllLinks GridEdgeWall $ emptyGrid gmin gmax
 
-bordered :: Grid -> Grid
-bordered g@(Grid (xmin, ymin) (xmax, ymax) _) =
-  setAllCells GridWallHard (colCells xmin g) southBordered
-  where
-    northBordered = setAllCells GridWallHard (rowCells ymin g) g
-    eastBordered = setAllCells GridWallHard (colCells xmax g) northBordered
-    southBordered = setAllCells GridWallHard (rowCells ymax g) eastBordered
-
 -- | Set a specific cell using a cell space coordinate
 setCell :: Cell -> Grid -> Coord -> Grid
 setCell c g x = g {gCells = M.insert x c $ gCells g}
@@ -149,9 +139,6 @@ link' = setLink GridEdgeDoor
 -- | unlink two cells in grid space. They must be adjacent
 unlink :: Grid -> Coord -> Coord -> Grid
 unlink = setLink GridEdgeWall
-
-unlink' :: Grid -> Coord -> Coord -> Grid
-unlink' = setLink GridWallHard
 
 -- | Visit a cell
 visit :: Grid -> Coord -> Grid

@@ -38,7 +38,10 @@ randEven x x' = (+ x) <$> randEven' (x' - x)
     randEven' = randMapped (.&. (maxBound - 1)) (.|. 1)
 
 randBool :: Double -> IO Bool
-randBool chance = fmap (<=chance) (getStdRandom $ randomR (0.0, 1.0))
+randBool chance = (<=chance) <$> randDouble
+
+randDouble :: IO Double
+randDouble = getStdRandom $ randomR (0.0, 1.0)
 
 randNode :: Grid -> IO Coord
 randNode grid = do
@@ -198,15 +201,19 @@ copyFromGrid level grid = foldl copyCell (pure level) $ levelCoords level
       lvl <- iolvl
       tile <- cellToTile $ cell x grid
       pure $ updateTile x tile lvl
-    cellToTile GridEmpty = pure Wall
-    cellToTile GridFloor = pure Floor
-    cellToTile GridEdgeWall = pure Wall
-    cellToTile GridWallHard = pure Wall
-    cellToTile GridEdgeDoor = do
-      open <- randBool 0.40
-      if open
-        then pure $ Dr Opened
-        else pure $ Dr Closed
+
+cellToTile :: Cell -> IO Tile
+cellToTile c = case c of
+  GridEmpty -> pure Wall
+  GridFloor -> pure Floor
+  GridEdgeWall -> pure Wall
+  GridEdgeDoor -> doorType <$> randDouble
+
+doorType :: Double -> Tile
+doorType value
+  | value <= 0.10 = Floor
+  | value <= 0.55 = Dr Opened
+  | otherwise = Dr Closed
 
 randomLevel :: Level -> Int -> IO Level
 randomLevel lvl cnt = do
