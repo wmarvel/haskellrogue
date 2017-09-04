@@ -3,7 +3,7 @@ module Level.Grid.GrowingTree where
 import Coord.Types
 import Level.Grid.Types
 import System.Random
-import System.Random.Shuffle
+import System.Random.PCG
 
 -- Using FRecBT as the frontier results in a recursive backtracker
 newtype FRecBT = FRecBT [Coord]
@@ -32,8 +32,8 @@ instance Frontier FPrim where
   fremove c (FPrim cs) = FPrim $ filter (/=c) cs
   fselect (FPrim []) = pure Nothing
   fselect (FPrim cs) = do
-    cs' <- shuffleM cs
-    pure $ Just $ head cs'
+    mc <- randomElt cs
+    pure mc
 
 instance Frontier FOldest where
   fadd c (FOldest [] _) = FOldest [c] []
@@ -48,14 +48,17 @@ instance Frontier FOldest where
 randomElt :: [a] -> IO (Maybe a)
 randomElt [] = pure Nothing
 randomElt xs = do
-  i <- getStdRandom $ randomR (0, length xs - 1)
+  i <- getPCGRandom $ randomR (0, length xs - 1)
   pure $ Just $ xs !! i
+
+randomUnvisited :: Coord -> Grid -> IO (Maybe Coord)
+randomUnvisited c g = randomElt $ unvisitedNodes c g
 
 unvisitedNodes :: Coord -> Grid -> [Coord]
 unvisitedNodes = adjacentNodesOf (== GridEmpty)
 
-unvisitedNodesR :: Coord -> Grid -> IO [Coord]
-unvisitedNodesR x g = shuffleM $ unvisitedNodes x g
+-- unvisitedNodesR :: Coord -> Grid -> IO [Coord]
+-- unvisitedNodesR x g = shuffleM $ unvisitedNodes x g
 
 emptyNodeR :: Grid -> IO (Maybe Coord)
 emptyNodeR g = randomElt $ filter predicate $ nodeCoords g
@@ -68,10 +71,10 @@ mazify' grid front = do
   case maybeCell of
     Nothing -> pure grid
     Just x -> do
-      unvisited <- unvisitedNodesR x grid
+      unvisited <- randomUnvisited x grid
       case unvisited of
-        [] -> mazify' grid $ fremove x front
-        (n:_) -> mazify' (carve grid x n) $ fadd n front
+        Nothing -> mazify' grid $ fremove x front
+        Just n -> mazify' (carve grid x n) $ fadd n front
 
 mazify :: MazeAlgo -> Grid -> IO Grid
 mazify MazeRecBT grid = mazeGrid' (FRecBT []) grid

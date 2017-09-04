@@ -6,6 +6,7 @@ import qualified Data.Set as S
 import Level.Grid.GrowingTree
 import Level.Grid.Types
 import System.Random
+import System.Random.PCG
 import Types
 import Level
 
@@ -22,7 +23,7 @@ randElt xs = do
   pure $ xs !! index
   
 randInt :: Int -> Int -> IO Int
-randInt rMin rMax = getStdRandom $ randomR (rMin, rMax)
+randInt rMin rMax = getPCGRandom $ randomR (rMin, rMax)
 
 randMapped :: (Int -> Int) -> (Int -> Int) -> Int -> IO Int
 randMapped fRes fLim limit = fmap fRes $ randInt 0 $ fLim limit
@@ -41,7 +42,7 @@ randBool :: Double -> IO Bool
 randBool chance = (<=chance) <$> randDouble
 
 randDouble :: IO Double
-randDouble = getStdRandom $ randomR (0.0, 1.0)
+randDouble = getPCGRandom $ randomR (0.0, 1.0)
 
 randNode :: Grid -> IO Coord
 randNode grid = do
