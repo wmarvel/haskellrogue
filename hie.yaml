@@ -1,0 +1,40 @@
+cradle:
+  stack:
+    - path: "./src/Main.hs"
+      component: "haskellrogue:exe:hrogue"
+
+    - path: "./src/Console.hs"
+      component: "haskellrogue:exe:hrogue"
+
+    - path: "./src/Coord/Types.hs"
+      component: "haskellrogue:exe:hrogue"
+
+    - path: "./src/FOV.hs"
+      component: "haskellrogue:exe:hrogue"
+
+    - path: "./src/Level.hs"
+      component: "haskellrogue:exe:hrogue"
+
+    - path: "./src/Level/Grid/GrowingTree.hs"
+      component: "haskellrogue:exe:hrogue"
+
+    - path: "./src/Level/Grid/Types.hs"
+      component: "haskellrogue:exe:hrogue"
+
+    - path: "./src/Level/LevelGen.hs"
+      component: "haskellrogue:exe:hrogue"
+
+    - path: "./src/Misc.hs"
+      component: "haskellrogue:exe:hrogue"
+
+    - path: "./src/System/Random/PCG.hs"
+      component: "haskellrogue:exe:hrogue"
+
+    - path: "./src/System/Random/PCG/Internal.hs"
+      component: "haskellrogue:exe:hrogue"
+
+    - path: "./src/Types.hs"
+      component: "haskellrogue:exe:hrogue"
+
+    - path: "./src/Paths_haskellrogue.hs"
+      component: "haskellrogue:exe:hrogue"

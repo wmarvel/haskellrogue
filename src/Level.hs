@@ -1,6 +1,5 @@
 module Level where
 
-import Data.Maybe (fromMaybe)
 import Coord.Types
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -8,11 +7,10 @@ import System.Random
 import Types
 
 sizedLevel :: Coord -> Level
-sizedLevel bound = emptyLevel {lMax = bound}
+sizedLevel bound = emptyLevel{lMax = bound}
 
 isAtCoord :: (a -> Bool) -> Bool -> Coord -> M.Map Coord a -> Bool
-isAtCoord f defval coord valuemap =
-  fromMaybe defval (f <$> M.lookup coord valuemap)
+isAtCoord f defval coord valuemap = maybe defval f (M.lookup coord valuemap)
 
 isTile :: (Tile -> Bool) -> Bool -> Coord -> Level -> Bool
 isTile f defval coord level = isAtCoord f defval coord (lTiles level)
@@ -46,17 +44,17 @@ lookupTile :: Coord -> Level -> Tile
 lookupTile coord level = M.findWithDefault Wall coord $ lTiles level
 
 updateTile :: Coord -> Tile -> Level -> Level
-updateTile coord tile level = level {lTiles = tiles, lChanged = changed}
+updateTile coord tile level = level{lTiles = tiles, lChanged = changed}
   where
     tiles =
-      case tile of
-        Wall -> M.delete coord $ lTiles level
-        _ -> M.insert coord tile $ lTiles level
+        case tile of
+            Wall -> M.delete coord $ lTiles level
+            _ -> M.insert coord tile $ lTiles level
     changed = S.insert coord $ lChanged level
 
 updateVisible :: Coord -> Level -> Level
 updateVisible coord level =
-  level {lChanged = changed, lSeen = seen, lVisible = visible}
+    level{lChanged = changed, lSeen = seen, lVisible = visible}
   where
     changed = S.insert coord $ lChanged level
     seen = S.insert coord $ lSeen level
@@ -70,21 +68,21 @@ updatedCoords = S.toList . lChanged
 
 unchangedWorld :: World -> World
 unchangedWorld world@(World _ level) =
-  world {wLevel = level {lChanged = lVisible level, lVisible = S.empty}}
+    world{wLevel = level{lChanged = lVisible level, lVisible = S.empty}}
 
 changedWorld :: World -> World
 changedWorld world@(World _ level) =
-  world {wLevel = M.foldrWithKey updateTile level $ lTiles level}
+    world{wLevel = M.foldrWithKey updateTile level $ lTiles level}
 
 copyTiles :: Coord -> Coord -> Level -> Level -> Level
 copyTiles (x1, y1) (x2, y2) source target =
-  foldr copyTile target [(x, y) | x <- [x1 .. x2], y <- [y1 .. y2]]
+    foldr copyTile target [(x, y) | x <- [x1 .. x2], y <- [y1 .. y2]]
   where
     copyTile coord = updateTile coord (lookupTile coord source)
 
 joinLevels :: Level -> Level -> Level
 joinLevels l1 l2 =
-  merged {lMin = minCoord l1Min l2Min, lMax = maxCoord l1Max l2Max}
+    merged{lMin = minCoord l1Min l2Min, lMax = maxCoord l1Max l2Max}
   where
     l1Min = lMin l1
     l1Max = lMax l1
@@ -94,8 +92,8 @@ joinLevels l1 l2 =
 
 randomSpawn :: Level -> IO Coord
 randomSpawn level = do
-  offset <- getStdRandom $ randomR (0, length floors - 1)
-  pure $ floors !! offset
+    offset <- getStdRandom $ randomR (0, length floors - 1)
+    pure $ floors !! offset
   where
     okTile = flip isFloor level
     floors = filter okTile coords

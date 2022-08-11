@@ -11,16 +11,20 @@ ghc-options: -Wall
 
 dependencies:
   - base >= 4.7 && < 5
-  - containers >= 0.5 && < 1
-  - ansi-terminal >= 0.6 && < 1
-  - random >= 1.1 && < 2
-  - time >= 1.6.0.1 && < 2
+  - containers
+  - ansi-terminal
+  - random
+  - time
+
+library:
+  source-dirs: src
 
 executables:
   hrogue:
     main: Main.hs
-    source-dirs: src
+    source-dirs: app
     dependencies:
+      - haskellrogue
       - hpack
 
 

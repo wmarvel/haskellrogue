@@ -6,18 +6,19 @@ import Data.Word
 import Numeric (showHex)
 import System.Random
 
-data PCGGen =
-  PCGState Word64
-           Word64
+data PCGGen
+    = PCGState
+        Word64
+        Word64
 
 instance Show PCGGen where
-  show (PCGState state inc) =
-     "PCGGen 0x" ++ showHex state (" 0x" ++ showHex inc "")
+    show (PCGState state inc) =
+        "PCGGen 0x" ++ showHex state (" 0x" ++ showHex inc "")
 
 instance RandomGen PCGGen where
-  next = pcgNext
-  split = pcgSplit
-  genRange _ = pcgRange
+    next = pcgNext
+    split = pcgSplit
+    genRange _ = pcgRange
 
 pcgNext :: PCGGen -> (Int, PCGGen)
 pcgNext gen = (word32ToInt word, gen')
@@ -26,9 +27,9 @@ pcgNext gen = (word32ToInt word, gen')
 
 pcgRange :: (Int, Int)
 pcgRange = (fromIntegral rMin, fromIntegral rMax)
-    where
-      rMin = minBound :: Int32
-      rMax = maxBound :: Int32
+  where
+    rMin = minBound :: Int32
+    rMax = maxBound :: Int32
 
 pcgSplit :: PCGGen -> (PCGGen, PCGGen)
 pcgSplit gen = (mkPCGGen bits0 bits1, mkPCGGen bits1 bits0)
@@ -75,4 +76,3 @@ mkPCGGen seed inc = snd $ step $ pcgAddState gen1 seed
   where
     gen0 = PCGState 0 $ shiftL inc 1 .|. 1
     (_, gen1) = step gen0
-

@@ -32,9 +32,9 @@ ray θ len = L.nub $ map (endPoint θ) [0.0,0.125 .. len]
 fovRays :: Int -> RaySet
 fovRays len = foldl (flip S.insert) S.empty rays
   where
-    len' = fromIntegral len - 0.5
-    dθ = 2 * pi / 180
-    rays = map (`ray` len') [0.0,dθ..2.0*pi]
+      len' = fromIntegral len - 0.5
+      dθ = 2 * pi / 180
+      rays = map (`ray` len') [0.0,dθ..2.0*pi]
 
 -- Given a coordinate, a set of rays, and a level,
 -- compute the field of view at the coordinate
@@ -42,11 +42,10 @@ fov :: Coord -> RaySet -> Level -> [Coord]
 fov off rays lvl = foldl maybeAdd [] rays
   where
     maybeAdd result [] = result
-    maybeAdd result (x:xs) =
-      if isWall coord lvl || isClosedDoor coord lvl
-        then result'
-        else maybeAdd result' xs
+    maybeAdd result (x : xs) =
+        if isWall coord lvl || isClosedDoor coord lvl
+            then result'
+            else maybeAdd result' xs
       where
         result' = coord : result
         coord = x |+| off
-

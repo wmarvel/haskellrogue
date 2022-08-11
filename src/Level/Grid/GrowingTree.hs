@@ -17,39 +17,36 @@ data FOldest = FOldest [Coord] [Coord]
 data MazeAlgo = MazeRecBT | MazePrim | MazeOldest
 
 class Frontier a where
-  fadd :: Coord -> a -> a
-  fremove :: Coord -> a -> a
-  fselect :: a -> IO (Maybe Coord)
+    fadd :: Coord -> a -> a
+    fremove :: Coord -> a -> a
+    fselect :: a -> IO (Maybe Coord)
 
 instance Frontier FRecBT where
-  fadd c (FRecBT cs) = FRecBT $ c : cs
-  fremove c (FRecBT cs) = FRecBT $ filter (/=c) cs
-  fselect (FRecBT []) = pure Nothing
-  fselect (FRecBT cs) = pure $ Just $ head cs
+    fadd c (FRecBT cs) = FRecBT $ c : cs
+    fremove c (FRecBT cs) = FRecBT $ filter (/= c) cs
+    fselect (FRecBT []) = pure Nothing
+    fselect (FRecBT cs) = pure $ Just $ head cs
 
 instance Frontier FPrim where
-  fadd c (FPrim cs) = FPrim $ c : cs
-  fremove c (FPrim cs) = FPrim $ filter (/=c) cs
-  fselect (FPrim []) = pure Nothing
-  fselect (FPrim cs) = do
-    mc <- randomElt cs
-    pure mc
+    fadd c (FPrim cs) = FPrim $ c : cs
+    fremove c (FPrim cs) = FPrim $ filter (/= c) cs
+    fselect (FPrim []) = pure Nothing
+    fselect (FPrim cs) = do randomElt cs
 
 instance Frontier FOldest where
-  fadd c (FOldest [] _) = FOldest [c] []
-  fadd c (FOldest xs ys) = FOldest xs (c:ys)
-  fremove _ (FOldest [] _) = FOldest [] []
-  fremove _ (FOldest [_] ys) = FOldest (reverse ys) []
-  fremove _ (FOldest (_:xs) ys) = FOldest xs ys
-  fselect (FOldest [] _) = pure Nothing
-  fselect (FOldest (x:_) _) = pure $ Just x
-  
-    
+    fadd c (FOldest [] _) = FOldest [c] []
+    fadd c (FOldest xs ys) = FOldest xs (c : ys)
+    fremove _ (FOldest [] _) = FOldest [] []
+    fremove _ (FOldest [_] ys) = FOldest (reverse ys) []
+    fremove _ (FOldest (_ : xs) ys) = FOldest xs ys
+    fselect (FOldest [] _) = pure Nothing
+    fselect (FOldest (x : _) _) = pure $ Just x
+
 randomElt :: [a] -> IO (Maybe a)
 randomElt [] = pure Nothing
 randomElt xs = do
-  i <- getPCGRandom $ randomR (0, length xs - 1)
-  pure $ Just $ xs !! i
+    i <- getPCGRandom $ randomR (0, length xs - 1)
+    pure $ Just $ xs !! i
 
 randomUnvisited :: Coord -> Grid -> IO (Maybe Coord)
 randomUnvisited c g = randomElt $ unvisitedNodes c g
@@ -67,14 +64,14 @@ emptyNodeR g = randomElt $ filter predicate $ nodeCoords g
 
 mazify' :: (Frontier a) => Grid -> a -> IO Grid
 mazify' grid front = do
-  maybeCell <- fselect front
-  case maybeCell of
-    Nothing -> pure grid
-    Just x -> do
-      unvisited <- randomUnvisited x grid
-      case unvisited of
-        Nothing -> mazify' grid $ fremove x front
-        Just n -> mazify' (carve grid x n) $ fadd n front
+    maybeCell <- fselect front
+    case maybeCell of
+        Nothing -> pure grid
+        Just x -> do
+            unvisited <- randomUnvisited x grid
+            case unvisited of
+                Nothing -> mazify' grid $ fremove x front
+                Just n -> mazify' (carve grid x n) $ fadd n front
 
 mazify :: MazeAlgo -> Grid -> IO Grid
 mazify MazeRecBT grid = mazeGrid' (FRecBT []) grid
@@ -88,12 +85,12 @@ mazeGrid MazeOldest = makeMazeGrid $ FOldest [] []
 
 mazeGrid' :: (Frontier a) => a -> Grid -> IO Grid
 mazeGrid' front grid = do
-  xMaybe <- emptyNodeR grid
-  case xMaybe of
-    Nothing -> pure grid
-    Just x -> do
-      newGrid <- mazify' (visit grid x) (fadd x front)
-      mazeGrid' front newGrid
+    xMaybe <- emptyNodeR grid
+    case xMaybe of
+        Nothing -> pure grid
+        Just x -> do
+            newGrid <- mazify' (visit grid x) (fadd x front)
+            mazeGrid' front newGrid
 
 makeMazeGrid :: (Frontier a) => a -> Coord -> Coord -> IO Grid
 makeMazeGrid front gmin gmax = mazeGrid' front $ emptyUnlinkedGrid gmin gmax

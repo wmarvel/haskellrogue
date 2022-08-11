@@ -28,6 +28,8 @@ cleanLevel = levelAllFloor levelSize
 
 main :: IO ()
 main = do
+  hSetBuffering stdin NoBuffering
+  hSetBuffering stdout NoBuffering  
   rrooms <- randInt minRooms maxRooms
   rlevel <- randomLevel cleanLevel rrooms
   rspawn <- randomSpawn rlevel
@@ -60,9 +62,7 @@ instance CommandSource Hero where
     case char of
       c
         | c `elem` "wasdkulnjbhy" -> return $ Move $ getDirection c
-      'o' -> do
-        ochar <- getChar
-        pure $ Operate $ getDirection ochar
+      'o' -> do Operate . getDirection <$> getChar
       'q' -> pure Exit
       '>' -> pure $ TakeStair Down
       '<' -> pure $ TakeStair Up
